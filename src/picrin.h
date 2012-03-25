@@ -8,38 +8,13 @@
 #include <stdlib.h>
 
 
+
+/*******************************************************************************
+ * Low Level Object
+ ******************************************************************************/
+
+
 typedef intptr_t PicObj;
-
-#define PIC_WORD (sizeof(PicObj))
-
-
-
-/*******************************************************************************
- * Interpeter
- *******************************************************************************/
-
-
-typedef struct PicInterp {
-    size_t heap_size;
-    void * heap_from;
-    void * heap_to;
-    void * heap_end;
-    PicObj intern_table;        /* an association array */
-    PicObj curin;
-    PicObj curout;
-    PicObj curerr;
-    PicObj topenv;
-}  PicInterp;
-
-
-PicInterp * pic_new_interp();
-
-
-
-
-/*******************************************************************************
- * Objects
- *******************************************************************************/
 
 
 #define PIC_TRUE (0x0f)
@@ -48,22 +23,57 @@ PicInterp * pic_new_interp();
 #define PIC_VOID (0x3f)
 
 
-#define PIC_OBJ_HEADER PicObj type
+#define PIC_NILP(obj) ((obj) == PIC_NIL)
+#define PIC_TRUEP(obj) ((obj) == PIC_TRUE)
+#define PIC_FALSEP(obj) ((obj) == PIC_FALSE)
+
+#define PIC_POINTERP(obj) (((obj)&0x03) == 0)
+#define PIC_FIXNUMP(obj) (((obj)&0x03) == 1)
+
+#define PIC_TO_FIXNUM(n) (((n)<<2)+1)
+#define PIC_FROM_FIXNUM(obj) ((obj)>>2)
 
 
-typedef struct PicObjTemp {
-    PIC_OBJ_HEADER;
-} PicObjTemp;
+typedef struct PicObjHeader {
+    int refc;
+    int type;
+    void (*dealloc)(PicObj obj);
+} PicObjHeader;
+
+
+#define PIC_HEADEROF(obj) (((PicObjHeader*)(obj))-1)
+#define PIC_REFCOF(obj) (PIC_HEADEROF(obj)->refc)
+#define PIC_TYPEOF(obj) (PIC_HEADEROF(obj)->type)
+#define PIC_DEALLOC(obj) (PIC_HEADEROF(obj)->dealloc)
+
+#define PIC_INCREF(obj) (++PIC_REFCOF(obj))
+#define PIC_DECREF(obj) ((--PIC_REFCOF(obj))?: pic_free(obj))
+
+#define PIC_XINCREF(obj) ((PIC_POINTERP(obj))? PIC_INCREF(obj) : (void)0)
+#define PIC_XDECREF(obj) ((PIC_POINTERP(obj))? PIC_DECREF(obj) : (void)0)
+
+#define PIC_UPDATEREF(ptr, obj) \
+    do { PIC_INCREF(obj); PIC_DECREF(ptr); ptr = obj; } while (0)
+#define PIC_XUPDATEREF(ptr, obj) \
+    do { PIC_XINCREF(obj); PIC_XDECREF(ptr); ptr = obj; } while (0)
+
+void * pic_malloc(size_t size, int type, void (*dealloc)(PicObj obj));
+void   pic_free(PicObj obj);
+
+
+/*******************************************************************************
+ * High Level Object
+ *******************************************************************************/
 
 
 enum {
-    PIC_TYPE_PAIR = 0x1f,
-    PIC_TYPE_SYMBOL = 0x2f,
-    PIC_TYPE_STRING = 0x3f,
-    PIC_TYPE_SYNTAX = 0x4f,
-    PIC_TYPE_CLOSURE = 0x5f,
-    PIC_TYPE_PORT = 0x6f,
-    PIC_TYPE_CFUNCTION = 0x7f,
+    PIC_TYPE_PAIR,
+    PIC_TYPE_SYMBOL,
+    PIC_TYPE_STRING,
+    PIC_TYPE_SYNTAX,
+    PIC_TYPE_CLOSURE,
+    PIC_TYPE_PORT,
+    PIC_TYPE_CFUNCTION,
 };
 
 enum {
@@ -78,26 +88,22 @@ enum {
 
 
 typedef struct PicPair {
-    PIC_OBJ_HEADER;
     PicObj car;
     PicObj cdr;
 } PicPair;
 
 
 typedef struct PicString {
-    PIC_OBJ_HEADER;
     char data[0];
 } PicString;
 
 
 typedef struct PicSymbol {
-    PIC_OBJ_HEADER;
     PicObj rep;
 } PicSymbol;
     
     
 typedef struct PicPort {
-    PIC_OBJ_HEADER;
     FILE * file;
     bool dir;                 /* true for input, false for output */
     bool text;                /* true for textual, false for binary */
@@ -106,14 +112,12 @@ typedef struct PicPort {
 
 
 typedef struct PicSyntax {
-    PIC_OBJ_HEADER;
     int kind;
-    PicObj userdata;                /* (transformer . mac-env) */
+    PicObj data;                /* (transformer . mac-env) */
 } PicSyntax;
 
 
 typedef struct PicClosure {
-    PIC_OBJ_HEADER;
     PicObj pars;
     PicObj body;
     PicObj env;
@@ -121,29 +125,19 @@ typedef struct PicClosure {
 
 
 typedef struct PicCFunction {
-    PIC_OBJ_HEADER;
-    PicObj (*func)(PicInterp * pic, PicObj args);
+    PicObj (*func)(PicObj args);
 } PicCFunction;
 
 
 
-#define PIC_NILP(obj) ((obj) == PIC_NIL)
-#define PIC_TRUEP(obj) ((obj) == PIC_TRUE)
-#define PIC_FALSEP(obj) ((obj) == PIC_FALSE)
+#define PIC_PAIRP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_PAIR)
+#define PIC_STRINGP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_STRING)
+#define PIC_SYMBOLP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYMBOL)
+#define PIC_SYNTAXP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYNTAX)
+#define PIC_CLOSUREP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CLOSURE)
 
-#define PIC_HEAPP(obj) (((obj)&0x03) == 0)
-#define PIC_FIXNUMP(obj) (((obj)&0x03) == 1)
 
-#define PIC_TO_FIXNUM(n) (((n)<<2)+1)
-#define PIC_FROM_FIXNUM(obj) ((obj)>>2)
-
-#define PIC_TYPEOF(obj) (((PicObjTemp*)(obj))->type)
-
-#define PIC_PAIRP(obj) (PIC_HEAPP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_PAIR)
-#define PIC_STRINGP(obj) (PIC_HEAPP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_STRING)
-#define PIC_SYMBOLP(obj) (PIC_HEAPP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYMBOL)
-#define PIC_SYNTAXP(obj) (PIC_HEAPP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYNTAX)
-#define PIC_CLOSUREP(obj) (PIC_HEAPP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CLOSURE)
+/* These accessors LENT the ownership of the return value. */
 
 #define PIC_PAIR(obj) ((PicPair*)(obj))
 #define PIC_CAR(obj) (PIC_PAIR(obj)->car)
@@ -167,22 +161,40 @@ typedef struct PicCFunction {
 #define PIC_PORT_TYPE(obj) (PIC_PORT(obj)->type)
 #define PIC_PORT_STAT(obj) (PIC_PORT(obj)->stat)
 
-
 #define PIC_SYNTAX(obj) ((PicSyntax*)(obj))
 #define PIC_SYNTAX_DATA(obj) (PIC_SYNTAX(obj)->data)
 #define PIC_SYNTAX_KIND(obj) (PIC_SYNTAX(obj)->kind)
-
 
 #define PIC_CLOSURE(obj) ((PicClosure*)(obj))
 #define PIC_CLOSURE_PARS(obj) (PIC_CLOSURE(obj)->pars)
 #define PIC_CLOSURE_BODY(obj) (PIC_CLOSURE(obj)->body)
 #define PIC_CLOSURE_ENV(obj)  (PIC_CLOSURE(obj)->env)
 
-
 #define PIC_CFUNCTION(obj) ((PicCFunction*)(obj))
 #define PIC_CFUNCTION_FUNC(obj) (PIC_CFUNCTION(obj)->func)
 
 
+PicObj pic_make_pair(PicObj car, PicObj cdr);
+PicObj pic_make_string(char * str);
+PicObj pic_make_symbol(char * rep);
+PicObj pic_make_port(FILE * file, bool dir, bool text);
+PicObj pic_make_closure(PicObj pars, PicObj body, PicObj env);
+PicObj pic_make_syntax(int kind, PicObj data);
+PicObj pic_make_cfunction(PicObj (*func)(PicObj args));
+
+
+
+/*******************************************************************************
+ * Global State
+ *******************************************************************************/
+
+
+extern PicObj intern_table;        /* an association array */
+extern PicObj curin;
+extern PicObj curout;
+extern PicObj curerr;
+
+void pic_init();
 
 
 
@@ -191,41 +203,30 @@ typedef struct PicCFunction {
  *******************************************************************************/
 
 
-#define USE_PIC PicInterp * pic
+bool pic_eqp(PicObj x, PicObj y);
+bool pic_eqvp(PicObj x, PicObj y);
+bool pic_equalp(PicObj x, PicObj y); /* FIXME */
 
+PicObj pic_cons(PicObj car, PicObj cdr);
+PicObj pic_assq(PicObj key, PicObj alist);
+PicObj pic_assoc(PicObj key, PicObj alist);
+PicObj pic_acons(PicObj key, PicObj val, PicObj alist);
 
-PicObj pic_make_pair(USE_PIC, PicObj car, PicObj cdr);
-PicObj pic_make_string(USE_PIC, char * str);
-PicObj pic_make_symbol(USE_PIC, char * rep);
-PicObj pic_make_port(USE_PIC, FILE * file, bool dir, bool text);
-PicObj pic_make_closure(USE_PIC, PicObj pars, PicObj body, PicObj env);
-PicObj pic_make_syntax(USE_PIC, int kind, PicObj userdata);
-PicObj pic_make_cfunction(USE_PIC, PicObj (*func)(USE_PIC, PicObj args));
+char pic_read_raw(PicObj port);
+void pic_unread_raw(char c, PicObj port);
 
+PicObj pic_read(PicObj port);
+void pic_write(PicObj obj, PicObj port);
 
-bool   pic_eqp(PicObj x, PicObj y);
-bool   pic_eqvp(PicObj x, PicObj y);
-bool   pic_equalp(PicObj x, PicObj y); /* FIXME */
+PicObj pic_env_new(PicObj parent);
+PicObj pic_env_get(PicObj sym, PicObj env);
+void pic_env_add(PicObj sym, PicObj val, PicObj env);
+void pic_env_set(PicObj sym, PicObj val, PicObj env);
 
-PicObj pic_cons(USE_PIC, PicObj car, PicObj cdr);
-PicObj pic_assq(USE_PIC, PicObj key, PicObj alist);
-PicObj pic_assoc(USE_PIC, PicObj key, PicObj alist);
-PicObj pic_acons(USE_PIC, PicObj key, PicObj val, PicObj alist);
+PicObj pic_scheme_report_environment();
 
-char   pic_read_raw(USE_PIC, PicObj port);
-void   pic_unread_raw(USE_PIC, char c, PicObj port);
-
-PicObj pic_read(USE_PIC, PicObj port);
-void   pic_write(USE_PIC, PicObj obj, PicObj port);
-
-PicObj pic_env_new(USE_PIC, PicObj parent);
-PicObj pic_env_get(USE_PIC, PicObj sym, PicObj env);
-void   pic_env_add(USE_PIC, PicObj sym, PicObj val, PicObj env);
-void   pic_env_set(USE_PIC, PicObj sym, PicObj val, PicObj env);
-void   pic_env_init(USE_PIC, PicObj env);
-
-PicObj pic_eval(USE_PIC, PicObj form, PicObj env);
-PicObj pic_apply(USE_PIC, PicObj proc, PicObj args);
+PicObj pic_eval(PicObj form, PicObj env);
+PicObj pic_apply(PicObj proc, PicObj args);
 
 
 /*******************************************************************************
@@ -233,9 +234,9 @@ PicObj pic_apply(USE_PIC, PicObj proc, PicObj args);
  *******************************************************************************/
 
 
-PicObj pic_lib_sub(USE_PIC, PicObj args);
-PicObj pic_lib_mul(USE_PIC, PicObj args);
-PicObj pic_lib_eqn(USE_PIC, PicObj args);
+PicObj pic_c_sub(PicObj args);
+PicObj pic_c_mul(PicObj args);
+PicObj pic_c_eqn(PicObj args);
 
 
 #endif

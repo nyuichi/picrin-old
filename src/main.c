@@ -2,17 +2,24 @@
 
 int main(int argc, char ** argv)
 {
-    PicInterp * pic = pic_new_interp();
-    PicObj obj;
-    
+    PicObj form, result, env;
 
     puts("Picrin Scheme 0.0.1 [" __DATE__ "]");
 
+    env = pic_scheme_report_environment();
+
     for (;;) {
         printf("> ");
-        obj = pic_read(pic, pic->curin);
-        obj = pic_eval(pic, obj, pic->topenv);
-        pic_write(pic, obj, pic->curout);
+
+        form = pic_read(curin);
+        result = pic_eval(form, env);
+        pic_write(result, curout);
+
         printf("\n");
+
+        PIC_DECREF(form);
+        PIC_DECREF(result);
     }
+
+    PIC_DECREF(env);
 }
