@@ -66,14 +66,15 @@ PicObj pic_scheme_report_environment()
     REGISTER_SYNTAX("quote", QUOTE);
     REGISTER_SYNTAX("begin", BEGIN);
     REGISTER_SYNTAX("set!", SET);
-    REGISTER_SYNTAX("list", LIST);
-    REGISTER_SYNTAX("length", LENGTH);
-    REGISTER_SYNTAX("reverse", REVERSE);
 
     REGISTER_CFUNC("+", pic_c_add);
     REGISTER_CFUNC("-", pic_c_sub);
     REGISTER_CFUNC("*", pic_c_mul);
     REGISTER_CFUNC("=", pic_c_eqn);
+
+    REGISTER_CFUNC("list", pic_c_list);
+    REGISTER_CFUNC("length", pic_c_length);
+    REGISTER_CFUNC("reverse", pic_c_reverse);
 
     return env;
 }
