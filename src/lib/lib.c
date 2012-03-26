@@ -26,4 +26,39 @@ PicObj pic_c_eqn(PicObj args)
     return (PIC_CAR(args) == PIC_CADR(args))? PIC_TRUE : PIC_FALSE;
 }
 
+PicObj pic_c_length(PicObj lst)
+{
+    int c = 0;
+    while (!PIC_NILP(lst)) {
+        c++;
+        lst = PIC_CDR(lst);
+    }
+    return PIC_TO_FIXNUM(c);
+}
 
+PicObj pic_c_list(PicObj args)
+{
+    return args;
+}
+
+PicObj pic_c_reverse(PicObj lst)
+{
+    if (PIC_NILP(lst) || !PIC_PAIRP(lst)) {
+        return PIC_NIL;
+    } else if (PIC_NILP(PIC_CDR(lst)) || !PIC_PAIRP(PIC_CDR(lst))) {
+        return lst;
+    } else {
+        PicObj result = PIC_NIL;
+        while (!PIC_NILP(lst)) {
+            PicObj tmp = pic_make_pair(PIC_CAR(lst), result);
+
+            PIC_XINCREF(tmp);
+            PIC_XDEFREF(result);
+            result = tmp;		
+
+            lst = PIC_CDR(lst);	
+            PIC_XDECREF(tmp);
+        }
+        return result;
+    }
+}
