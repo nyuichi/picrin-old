@@ -51,7 +51,6 @@ PicObj pic_eval(PicObj form, PicObj env)
             
             switch (kind) {
             case PIC_SYNTAX_DEFINE: {
-                perror("define");
                 PicObj var = PIC_CADR(form);
                 PicObj val = pic_eval(PIC_CADDR(form), env);
                 pic_env_add(var, val, env);
@@ -115,10 +114,6 @@ PicObj pic_apply(PicObj proc, PicObj args)
 {
     if (PIC_CLOSUREP(proc)) {
         PicObj env, res;
-        perror("application to closure");
-        perror("argument:");
-        pic_write(args, curout);
-        perror("\n");
         env = pic_env_new(PIC_CLOSURE_ENV(proc));
         pic_add_all(PIC_CLOSURE_PARS(proc), args, env);
         res = pic_eval(PIC_CLOSURE_BODY(proc), env);
