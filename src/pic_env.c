@@ -7,15 +7,12 @@ PicObj pic_env_new(PicObj parent)
 
 PicObj pic_env_get(PicObj sym, PicObj env)
 {
-    PicObj obj;
-
     if (PIC_NILP(env)) {
         return PIC_FALSE;
     } else {
-        obj = pic_assq(sym, PIC_CAR(env));
+        PicObj obj = pic_assq(sym, PIC_CAR(env));
         
         if (PIC_FALSEP(obj)) {
-            PIC_XDECREF(obj);
             return pic_env_get(sym, PIC_CDR(env)); 
         } else {
             return obj;
@@ -25,8 +22,9 @@ PicObj pic_env_get(PicObj sym, PicObj env)
 
 void pic_env_add(PicObj sym, PicObj val, PicObj env)
 {
-    /* Implicit incref and decref */
-    PIC_CAR(env) = pic_acons(sym, val, PIC_CAR(env));
+    PicObj new = pic_acons(sym, val, PIC_CAR(env));
+    PIC_XDECREF(PIC_CAR(env));
+    PIC_CAR(env) = new;
 }
 
 void pic_env_set(PicObj sym, PicObj val, PicObj env)
@@ -69,6 +67,7 @@ PicObj pic_scheme_report_environment()
     REGISTER_SYNTAX("begin", BEGIN);
     REGISTER_SYNTAX("set!", SET);
 
+    REGISTER_CFUNC("+", pic_c_add);
     REGISTER_CFUNC("-", pic_c_sub);
     REGISTER_CFUNC("*", pic_c_mul);
     REGISTER_CFUNC("=", pic_c_eqn);

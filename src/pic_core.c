@@ -88,11 +88,28 @@ PicObj pic_make_string(char * str)
 PicObj pic_make_symbol(char * rep)
 {
     PicObj str = pic_make_string(rep);
-    PicSymbol * obj = pic_malloc(sizeof(PicSymbol),
-                                 PIC_TYPE_SYMBOL,
-                                 dealloc_symbol);
-    PIC_SYMBOL_REP(obj) = str;
-    return (PicObj)obj;
+    PicObj dat = pic_assoc(str, intern_table);
+    PicObj tmp;
+    if (PIC_FALSEP(dat)) {
+        PicSymbol * obj = pic_malloc(sizeof(PicSymbol),
+                                     PIC_TYPE_SYMBOL,
+                                     dealloc_symbol);
+        PIC_SYMBOL_REP(obj) = str;
+
+        /* Update intern table */
+        tmp = pic_acons(str, (PicObj)obj, intern_table);
+        PIC_XDECREF(intern_table);
+        intern_table = tmp;
+        
+        PIC_DECREF(str);
+        return (PicObj)obj;
+    } else {
+        PicObj res = PIC_CDR(dat);
+        PIC_INCREF(res);
+        PIC_DECREF(str);
+        PIC_DECREF(dat);
+        return res;
+    }
 }
 
 PicObj pic_make_port(FILE * file, bool dir, bool text)

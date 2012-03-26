@@ -9,20 +9,20 @@ static PicObj pic_eval_all(PicObj list, PicObj env)
         PicObj car = pic_eval(PIC_CAR(list), env);
         PicObj cdr = pic_eval_all(PIC_CDR(list), env);
         PicObj res = pic_cons(car, cdr);
-        PIC_DECREF(car);
-        PIC_DECREF(cdr);
+        PIC_XDECREF(car);
+        PIC_XDECREF(cdr);
         return res;
     }
 }
 
 
-static void pic_set_all(PicObj pars, PicObj args, PicObj env)
+static void pic_add_all(PicObj pars, PicObj args, PicObj env)
 {
     if (PIC_NILP(pars) && PIC_NILP(args)) {
         return;
     } else {
         pic_env_add(PIC_CAR(pars), PIC_CAR(args), env);
-        pic_set_all(PIC_CDR(pars), PIC_CDR(args), env);
+        pic_add_all(PIC_CDR(pars), PIC_CDR(args), env);
     }
 }
 
@@ -36,6 +36,7 @@ PicObj pic_eval(PicObj form, PicObj env)
     if (PIC_SYMBOLP(form)) {
         PicObj pair = pic_env_get(form, env);
         PicObj res = PIC_CDR(pair);
+        PIC_XINCREF(res);
         PIC_DECREF(pair);
         return res;
     } else if (!PIC_PAIRP(form)) {
@@ -45,12 +46,15 @@ PicObj pic_eval(PicObj form, PicObj env)
         PicObj proc = pic_eval(PIC_CAR(form), env);
 
         if (PIC_SYNTAXP(proc)) {
-            switch (PIC_SYNTAX_KIND(proc)) {
+            int kind = PIC_SYNTAX_KIND(proc);
+            PIC_DECREF(proc);
+            
+            switch (kind) {
             case PIC_SYNTAX_DEFINE: {
+                perror("define");
                 PicObj var = PIC_CADR(form);
                 PicObj val = pic_eval(PIC_CADDR(form), env);
                 pic_env_add(var, val, env);
-                PIC_DECREF(proc);
                 PIC_XDECREF(val);
                 return PIC_VOID;
             }
@@ -58,14 +62,12 @@ PicObj pic_eval(PicObj form, PicObj env)
                 PicObj var = PIC_CADR(form);
                 PicObj val = pic_eval(PIC_CADDR(form), env);
                 pic_env_set(var, val, env);
-                PIC_DECREF(proc);
                 PIC_XDECREF(val);
                 return PIC_VOID;
             }
             case PIC_SYNTAX_LAMBDA: {
                 PicObj params = PIC_CADR(form);
                 PicObj body = PIC_CADDR(form);
-                PIC_DECREF(proc);
                 return pic_make_closure(params, body, env);
             }
             case PIC_SYNTAX_IF: {
@@ -74,17 +76,14 @@ PicObj pic_eval(PicObj form, PicObj env)
                 PicObj fail = PIC_CADDDR(form);
                 if (PIC_FALSEP(test)) {
                     PIC_XDECREF(test);
-                    PIC_DECREF(proc);
                     return pic_eval(fail, env);
                 } else {
                     PIC_XDECREF(test);
-                    PIC_DECREF(proc);
                     return pic_eval(succ, env);
                 }
             }
             case PIC_SYNTAX_QUOTE: {
                 PicObj res = PIC_CADR(form);
-                PIC_DECREF(proc);
                 PIC_XINCREF(res);
                 return res;
             }
@@ -96,7 +95,6 @@ PicObj pic_eval(PicObj form, PicObj env)
                     head = pic_eval(PIC_CAR(tail), env);
                     tail = PIC_CDR(tail);
                 }
-                PIC_DECREF(proc);
                 return head;
             }
 
@@ -115,12 +113,14 @@ PicObj pic_eval(PicObj form, PicObj env)
 
 PicObj pic_apply(PicObj proc, PicObj args)
 {
-
-    
     if (PIC_CLOSUREP(proc)) {
         PicObj env, res;
+        perror("application to closure");
+        perror("argument:");
+        pic_write(args, curout);
+        perror("\n");
         env = pic_env_new(PIC_CLOSURE_ENV(proc));
-        pic_set_all(PIC_CLOSURE_PARS(proc), args, env);
+        pic_add_all(PIC_CLOSURE_PARS(proc), args, env);
         res = pic_eval(PIC_CLOSURE_BODY(proc), env);
         PIC_XDECREF(env);
         return res;

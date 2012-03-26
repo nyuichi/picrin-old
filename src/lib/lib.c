@@ -1,5 +1,11 @@
 #include "picrin.h"
 
+
+PicObj pic_c_add(PicObj args)
+{
+    return PIC_CAR(args) + PIC_CADR(args) - 1;
+}
+
 PicObj pic_c_sub(PicObj args)
 {
     return PIC_CAR(args) - PIC_CADR(args) + 1;

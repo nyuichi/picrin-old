@@ -54,14 +54,14 @@ static void get_uinteger(USE_PARSER)
         }
     }
     KIND = T_NUMBER;
-    PIC_XUPDATEREF(DATA, PIC_TO_FIXNUM(k));
+    PIC_XDECREF(DATA);
+    DATA = PIC_TO_FIXNUM(k);
 }
 
 
 static void get_symbol(USE_PARSER)
 {
     char str[100], *buf = str, c;
-    PicObj sym;
     for (;;) {
         c = NEXTC();
         if (IS_DELIMITER(c)) {
@@ -72,10 +72,9 @@ static void get_symbol(USE_PARSER)
             *buf++ = c;
         }
     }
-    sym = pic_make_symbol(str);
     KIND = T_SYMBOL;
-    PIC_UPDATEREF(DATA, sym);
-    PIC_DECREF(sym);
+    PIC_XDECREF(DATA);
+    DATA = pic_make_symbol(str);
 }
 
 static void get_token(USE_PARSER)
@@ -173,7 +172,7 @@ PicObj pic_read(PicObj port)
     parser.backtrack = false;
     parser.token.data = PIC_NIL;
     res = parse(&parser);
-    PIC_XUPDATEREF(parser.token.data, PIC_NIL);
+    PIC_XDECREF(parser.token.data);
     return res;
 }
 
@@ -213,7 +212,7 @@ void pic_write(PicObj obj, PicObj port)
             fprintf(stdout, "%s", PIC_STRING_DATA(PIC_SYMBOL_REP(obj)));
             break;
         case PIC_TYPE_STRING:
-            fprintf(file, "#<string>");
+            fprintf(file, "\"%s\"", PIC_STRING_DATA(obj));
             break;
         case PIC_TYPE_SYNTAX:
             fprintf(file, "#<syntax>");

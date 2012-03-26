@@ -19,3 +19,4 @@ void pic_free(PicObj obj)
 {
     free(PIC_HEADEROF(obj));
 }
+

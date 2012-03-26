@@ -15,13 +15,11 @@ PicObj pic_acons(PicObj key, PicObj val, PicObj alist)
 
 PicObj pic_assq(PicObj key, PicObj alist)
 {
-    PicObj res;
-    
     if (PIC_NILP(alist)) {
         return PIC_FALSE;
     } else {
         if (pic_eqp(key, PIC_CAAR(alist))) {
-            res = PIC_CAR(alist);
+            PicObj res = PIC_CAR(alist);
             PIC_XINCREF(res);
             return res;
         } else {

@@ -52,11 +52,6 @@ typedef struct PicObjHeader {
 #define PIC_XINCREF(obj) ((PIC_POINTERP(obj))? PIC_INCREF(obj) : (void)0)
 #define PIC_XDECREF(obj) ((PIC_POINTERP(obj))? PIC_DECREF(obj) : (void)0)
 
-#define PIC_UPDATEREF(ptr, obj) \
-    do { PIC_INCREF(obj); PIC_DECREF(ptr); ptr = obj; } while (0)
-#define PIC_XUPDATEREF(ptr, obj) \
-    do { PIC_XINCREF(obj); PIC_XDECREF(ptr); ptr = obj; } while (0)
-
 void * pic_malloc(size_t size, int type, void (*dealloc)(PicObj obj));
 void   pic_free(PicObj obj);
 
@@ -234,6 +229,7 @@ PicObj pic_apply(PicObj proc, PicObj args);
  *******************************************************************************/
 
 
+PicObj pic_c_add(PicObj args);
 PicObj pic_c_sub(PicObj args);
 PicObj pic_c_mul(PicObj args);
 PicObj pic_c_eqn(PicObj args);
