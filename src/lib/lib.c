@@ -62,7 +62,7 @@ PicObj pic_c_reverse(PicObj lst)
             PicObj tmp = pic_make_pair(PIC_CAR(lst), result);
 
             PIC_XINCREF(tmp);
-            PIC_XDEFREF(result);
+            PIC_XDECREF(result);
             result = tmp;		
 
             lst = PIC_CDR(lst);	
