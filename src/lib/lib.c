@@ -28,12 +28,21 @@ PicObj pic_c_eqn(PicObj args)
 
 PicObj pic_c_length(PicObj lst)
 {
-    int c = 0;
-    while (!PIC_NILP(lst)) {
-        c++;
-        lst = PIC_CDR(lst);
+    if (PIC_NILP(lst)) {
+        return PIC_TO_FIXNUM(0);
+    } else {
+        int c = 0;
+        while (!PIC_NILP(lst)) {
+            if (!PIC_PAIRP(lst)) {
+                /*ERROR*/
+                return PIC_TO_FIXNUM(0);
+            } else {
+                c++;
+                lst = PIC_CDR(lst);
+            }
+        }
+        return PIC_TO_FIXNUM(c);
     }
-    return PIC_TO_FIXNUM(c);
 }
 
 PicObj pic_c_list(PicObj args)
