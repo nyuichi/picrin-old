@@ -130,6 +130,7 @@ typedef struct PicCFunction {
 #define PIC_SYMBOLP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYMBOL)
 #define PIC_SYNTAXP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYNTAX)
 #define PIC_CLOSUREP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CLOSURE)
+#define PIC_CFUNCTIONP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CFUNCTION)
 
 
 /* These accessors LENT the ownership of the return value. */

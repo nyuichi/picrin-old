@@ -119,7 +119,7 @@ PicObj pic_apply(PicObj proc, PicObj args)
         res = pic_eval(PIC_CLOSURE_BODY(proc), env);
         PIC_XDECREF(env);
         return res;
-    } else if (PIC_CFUNCTION(proc)) {
+    } else if (PIC_CFUNCTIONP(proc)) {
         PicObj (*callee)(PicObj args) = PIC_CFUNCTION_FUNC(proc);
         return callee(args);
     }

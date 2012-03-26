@@ -1,5 +1,14 @@
 #include "picrin.h"
 
+#define debug(msg, obj)                         \
+    do {                                        \
+    perror(msg);                                \
+    pic_write(obj, curout);                     \
+    puts("\n");                                 \
+    fflush(stdout);                             \
+    } while(0)
+
+
 int main(int argc, char ** argv)
 {
     PicObj form, result, env;
@@ -11,6 +20,7 @@ int main(int argc, char ** argv)
     env = pic_scheme_report_environment();
 
     for (;;) {
+        
         printf("> ");
 
         form = pic_read(curin);

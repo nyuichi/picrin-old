@@ -47,6 +47,7 @@ PicObj pic_c_length(PicObj lst)
 
 PicObj pic_c_list(PicObj args)
 {
+    PIC_XINCREF(args);
     return args;
 }
 
