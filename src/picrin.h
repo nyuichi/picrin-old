@@ -234,5 +234,8 @@ PicObj pic_c_sub(PicObj args);
 PicObj pic_c_mul(PicObj args);
 PicObj pic_c_eqn(PicObj args);
 
+PicObj pic_c_list(PicObj args);
+PicObj pic_c_length(PicObj lst);
+PicObj pic_c_reverse(PicObj lst);
 
 #endif
