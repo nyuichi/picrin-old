@@ -68,7 +68,7 @@ enum {
     PIC_TYPE_SYNTAX,
     PIC_TYPE_CLOSURE,
     PIC_TYPE_PORT,
-    PIC_TYPE_CFUNCTION,
+    PIC_TYPE_FOREIGN,
 };
 
 enum {
@@ -119,9 +119,9 @@ typedef struct PicClosure {
 } PicClosure;
 
 
-typedef struct PicCFunction {
+typedef struct PicForeign {
     PicObj (*func)(PicObj args);
-} PicCFunction;
+} PicForeign;
 
 
 
@@ -130,7 +130,7 @@ typedef struct PicCFunction {
 #define PIC_SYMBOLP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYMBOL)
 #define PIC_SYNTAXP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYNTAX)
 #define PIC_CLOSUREP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CLOSURE)
-#define PIC_CFUNCTIONP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CFUNCTION)
+#define PIC_FOREIGNP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_FOREIGN)
 
 
 /* These accessors LENT the ownership of the return value. */
@@ -166,8 +166,8 @@ typedef struct PicCFunction {
 #define PIC_CLOSURE_BODY(obj) (PIC_CLOSURE(obj)->body)
 #define PIC_CLOSURE_ENV(obj)  (PIC_CLOSURE(obj)->env)
 
-#define PIC_CFUNCTION(obj) ((PicCFunction*)(obj))
-#define PIC_CFUNCTION_FUNC(obj) (PIC_CFUNCTION(obj)->func)
+#define PIC_FOREIGN(obj) ((PicForeign*)(obj))
+#define PIC_FOREIGN_FUNC(obj) (PIC_FOREIGN(obj)->func)
 
 
 PicObj pic_make_pair(PicObj car, PicObj cdr);
@@ -176,7 +176,7 @@ PicObj pic_make_symbol(char * rep);
 PicObj pic_make_port(FILE * file, bool dir, bool text);
 PicObj pic_make_closure(PicObj pars, PicObj body, PicObj env);
 PicObj pic_make_syntax(int kind, PicObj data);
-PicObj pic_make_cfunction(PicObj (*func)(PicObj args));
+PicObj pic_make_foreign(PicObj (*func)(PicObj args));
 
 
 
@@ -234,7 +234,6 @@ PicObj pic_c_add(PicObj args);
 PicObj pic_c_sub(PicObj args);
 PicObj pic_c_mul(PicObj args);
 PicObj pic_c_eqn(PicObj args);
-
 PicObj pic_c_list(PicObj args);
 PicObj pic_c_length(PicObj lst);
 PicObj pic_c_reverse(PicObj lst);

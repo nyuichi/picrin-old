@@ -223,7 +223,7 @@ void pic_write(PicObj obj, PicObj port)
         case PIC_TYPE_PORT:
             fprintf(file, "#<port>");
             break;
-        case PIC_TYPE_CFUNCTION:
+        case PIC_TYPE_FOREIGN:
             fprintf(file, "#<cfunction>");
             break;
         }

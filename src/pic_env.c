@@ -49,7 +49,7 @@ void pic_env_set(PicObj sym, PicObj val, PicObj env)
 #define REGISTER_CFUNC(x,y)                        \
     do {                                           \
         PicObj sym = pic_make_symbol(x);           \
-        PicObj fun = pic_make_cfunction(y);        \
+        PicObj fun = pic_make_foreign(y);          \
         pic_env_add(sym, fun, env);                \
         PIC_DECREF(sym);                           \
         PIC_DECREF(fun);                           \

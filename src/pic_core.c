@@ -151,10 +151,10 @@ PicObj pic_make_syntax(int kind, PicObj data)
 }
 
 
-PicObj pic_make_cfunction(PicObj (*func)(PicObj args))
+PicObj pic_make_foreign(PicObj (*func)(PicObj args))
 {
-    PicCFunction * obj = pic_malloc(sizeof(PicCFunction),
-                                    PIC_TYPE_CFUNCTION,
+    PicForeign * obj = pic_malloc(sizeof(PicForeign),
+                                    PIC_TYPE_FOREIGN,
                                     dealloc_cfunction);
     obj->func = func;
     return (PicObj)obj;
