@@ -37,13 +37,13 @@ void pic_env_set(PicObj sym, PicObj val, PicObj env)
 }
 
 
-#define REGISTER_SYNTAX(x,y)                                       \
-    do {                                                           \
-        PicObj sym = pic_make_symbol(x);                           \
-        PicObj stx = pic_make_syntax(PIC_SYNTAX_##y, PIC_NIL);     \
-        pic_env_add(sym, stx, env);                                \
-        PIC_DECREF(sym);                                           \
-        PIC_DECREF(stx);                                           \
+#define REGISTER_SYNTAX(x,y)                                            \
+    do {                                                                \
+        PicObj sym = pic_make_symbol(x);                                \
+        PicObj stx = pic_make_syntax(PIC_SYNTAX_##y);                   \
+        pic_env_add(sym, stx, env);                                     \
+        PIC_DECREF(sym);                                                \
+        PIC_DECREF(stx);                                                \
     } while(0)
 
 #define REGISTER_CFUNC(x,y)                        \
@@ -66,15 +66,23 @@ PicObj pic_scheme_report_environment()
     REGISTER_SYNTAX("quote", QUOTE);
     REGISTER_SYNTAX("begin", BEGIN);
     REGISTER_SYNTAX("set!", SET);
+    REGISTER_SYNTAX("define-syntax", DEFSYNTAX);
+
+    REGISTER_CFUNC("eq?", pic_c_eqp);
 
     REGISTER_CFUNC("+", pic_c_add);
     REGISTER_CFUNC("-", pic_c_sub);
     REGISTER_CFUNC("*", pic_c_mul);
     REGISTER_CFUNC("=", pic_c_eqn);
 
-    REGISTER_CFUNC("list", pic_c_list);
-    REGISTER_CFUNC("length", pic_c_length);
-    REGISTER_CFUNC("reverse", pic_c_reverse);
+    REGISTER_CFUNC("null?", pic_c_nullp);
+    REGISTER_CFUNC("car", pic_c_car);
+    REGISTER_CFUNC("cdr", pic_c_cdr);
+    REGISTER_CFUNC("cons", pic_c_cons);
+    
+    REGISTER_CFUNC("make-syntactic-closure", pic_c_make_synclo);
+
+    REGISTER_CFUNC("write", pic_c_write);
 
     return env;
 }

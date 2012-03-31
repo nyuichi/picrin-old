@@ -1,6 +1,11 @@
 #include "picrin.h"
 
 
+PicObj pic_c_eqp(PicObj args)
+{
+    return (PIC_CAR(args) == PIC_CADR(args))? PIC_TRUE : PIC_FALSE;
+}
+
 PicObj pic_c_add(PicObj args)
 {
     return PIC_CAR(args) + PIC_CADR(args) - 1;
@@ -26,49 +31,37 @@ PicObj pic_c_eqn(PicObj args)
     return (PIC_CAR(args) == PIC_CADR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_length(PicObj lst)
+PicObj pic_c_nullp(PicObj args)
 {
-    if (PIC_NILP(lst)) {
-        return PIC_TO_FIXNUM(0);
-    } else {
-        int c = 0;
-        while (!PIC_NILP(lst)) {
-            if (!PIC_PAIRP(lst)) {
-                /*ERROR*/
-                return PIC_TO_FIXNUM(0);
-            } else {
-                c++;
-                lst = PIC_CDR(lst);
-            }
-        }
-        return PIC_TO_FIXNUM(c);
-    }
+    return PIC_NILP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_list(PicObj args)
+PicObj pic_c_make_synclo(PicObj args)
 {
-    PIC_XINCREF(args);
-    return args;
+    return pic_make_synclo(PIC_CAR(args), PIC_CADR(args), PIC_CADDR(args));
 }
 
-PicObj pic_c_reverse(PicObj lst)
+PicObj pic_c_car(PicObj args)
 {
-    if (PIC_NILP(lst) || !PIC_PAIRP(lst)) {
-        return PIC_NIL;
-    } else if (PIC_NILP(PIC_CDR(lst)) || !PIC_PAIRP(PIC_CDR(lst))) {
-        return lst;
-    } else {
-        PicObj result = PIC_NIL;
-        while (!PIC_NILP(lst)) {
-            PicObj tmp = pic_make_pair(PIC_CAR(lst), result);
+    PicObj car = PIC_CAR(PIC_CAR(args));
+    PIC_XINCREF(car);
+    return car;
+}
 
-            PIC_XINCREF(tmp);
-            PIC_XDECREF(result);
-            result = tmp;		
+PicObj pic_c_cdr(PicObj args)
+{
+    PicObj cdr = PIC_CDR(PIC_CAR(args));
+    PIC_XINCREF(cdr);
+    return cdr;
+}
 
-            lst = PIC_CDR(lst);	
-            PIC_XDECREF(tmp);
-        }
-        return result;
-    }
+PicObj pic_c_cons(PicObj args)
+{
+    return pic_cons(PIC_CAR(args), PIC_CADR(args));
+}
+
+PicObj pic_c_write(PicObj args)
+{
+    pic_write(PIC_CAR(args), curout);
+    return PIC_VOID;
 }
