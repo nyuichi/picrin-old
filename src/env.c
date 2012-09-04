@@ -69,6 +69,8 @@ PicObj pic_scheme_report_environment()
     REGISTER_SYNTAX("define-syntax", DEFSYNTAX);
 
     REGISTER_CFUNC("eq?", pic_c_eqp);
+    REGISTER_CFUNC("pair?", pic_c_pairp);
+    REGISTER_CFUNC("symbol?", pic_c_symbolp);
 
     REGISTER_CFUNC("+", pic_c_add);
     REGISTER_CFUNC("-", pic_c_sub);

@@ -269,6 +269,8 @@ PicObj pic_apply(PicObj proc, PicObj args);
 
 
 PicObj pic_c_eqp(PicObj args);
+PicObj pic_c_pairp(PicObj args);
+PicObj pic_c_symbolp(PicObj args);
 
 PicObj pic_c_add(PicObj args);
 PicObj pic_c_sub(PicObj args);

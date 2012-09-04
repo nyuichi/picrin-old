@@ -6,6 +6,16 @@ PicObj pic_c_eqp(PicObj args)
     return (PIC_CAR(args) == PIC_CADR(args))? PIC_TRUE : PIC_FALSE;
 }
 
+PicObj pic_c_pairp(PicObj args)
+{
+  return PIC_PAIRP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
+}
+
+PicObj pic_c_symbolp(PicObj args)
+{
+  return PIC_SYMBOLP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
+}
+
 PicObj pic_c_add(PicObj args)
 {
     return PIC_CAR(args) + PIC_CADR(args) - 1;
