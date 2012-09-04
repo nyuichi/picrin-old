@@ -1,7 +1,7 @@
 #include "picrin.h"
 
 #include <ctype.h>
-
+#include <string.h>
 
 /*******************************************************************************
  * Read
@@ -12,6 +12,7 @@
 typedef struct Tokenizer {
     enum {
         T_EOF,
+        T_BOOLEAN,
         T_NUMBER,
         T_SYMBOL,
         T_PAIR,
@@ -76,6 +77,18 @@ static void get_symbol(USE_PARSER)
             *buf++ = c;
         }
     }
+
+    if (!strcmp(str, "#t")) {
+      KIND = T_BOOLEAN;
+      DATA = PIC_TRUE;
+      return;
+    }
+    else if (!strcmp(str, "#f")) {
+      KIND = T_BOOLEAN;
+      DATA = PIC_FALSE;
+      return;
+    }
+
     KIND = T_SYMBOL;
     PIC_XDECREF(DATA);
     DATA = pic_make_symbol(str);
@@ -91,6 +104,10 @@ static void get_token(USE_PARSER)
     case EOF:
         KIND = T_EOF;
         return;
+
+    case ';':
+        while ((c = NEXTC()) != '\n');
+        return get_token(parser);
         
     case '(':
         KIND = T_PAIR;
@@ -187,6 +204,7 @@ static PicObj parse(USE_PARSER)
         return parse_abbr(parser, PIC_SYMBOL_UNQUOTE_SPLICING);
     case T_SYMBOL:
     case T_NUMBER:
+    case T_BOOLEAN:
         PIC_XINCREF(DATA);
         return DATA;
     case T_PAIR:
@@ -312,5 +330,5 @@ void pic_print(PicObj obj, PicObj port)
 void pic_newline(PicObj port)
 {
     FILE * file = PIC_PORT_FILE(port);
-    fputs("", file);
+    fputs("\n", file);
 }
