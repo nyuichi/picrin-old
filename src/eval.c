@@ -23,6 +23,8 @@ static void pic_add_all(PicObj pars, PicObj args, PicObj env)
 {
     if (PIC_NILP(pars) && PIC_NILP(args)) {
         return;
+    } else if (PIC_SYMBOLP(pars)) {
+      pic_env_add(pars, args, env);
     } else {
         pic_env_add(PIC_CAR(pars), PIC_CAR(args), env);
         pic_add_all(PIC_CDR(pars), PIC_CDR(args), env);
@@ -33,10 +35,17 @@ static void pic_add_all(PicObj pars, PicObj args, PicObj env)
 
 static PicObj pic_exec(PicObj form, PicObj env, PicObj freevars, PicObj freeenv)
 {
+  //  printf("evaluating..."); pic_print(form, curout);
+
     if (PIC_SYMBOLP(form)) {
         PicObj test = pic_memq(form, freevars);
         PicObj env_ = (PIC_FALSEP(test))? env : freeenv;
         PicObj pair = pic_env_get(form, env_);
+        if (PIC_FALSEP(pair)) {
+          printf("undefined symbol: ");
+          pic_print(form, curout);
+          abort();
+        }
         PicObj res = PIC_CDR(pair);
         PIC_XDECREF(test);
         PIC_XDECREF(pair);
@@ -120,7 +129,9 @@ static PicObj pic_exec(PicObj form, PicObj env, PicObj freevars, PicObj freeenv)
             PicObj form_ = pic_apply(PIC_MACRO_TRANSFORMER(proc), args_);
             PicObj res;
 
-            perror("macro expand");
+            printf("expanded from:\n");
+            pic_print(form, curout);
+            printf("to:\n");
             pic_print(form_, curout);
             puts("");
             
