@@ -1,21 +1,21 @@
 #include "picrin.h"
 
 
-#define PIC_HEADER_SIZE sizeof(PicObjHeader)
+#define PIC_HEADER_SIZE sizeof(pic_header)
 
-void * pic_malloc(size_t size, int type, void (*dealloc)(PicObj obj))
+void * pic_malloc(size_t size, int type, void (*dealloc)(pic_obj_t obj))
 {
     size_t real_size
         = ((size + PIC_HEADER_SIZE - 1) / PIC_HEADER_SIZE + 1) * PIC_HEADER_SIZE;
 
-    PicObjHeader * obj = malloc(real_size);
+    pic_header * obj = malloc(real_size);
     obj->refc = 1;
     obj->type = type;
     obj->dealloc = dealloc;
     return obj+1;
 }
 
-void pic_free(PicObj obj)
+void pic_free(pic_obj_t obj)
 {
     free(PIC_HEADEROF(obj));
 }

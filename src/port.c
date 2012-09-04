@@ -22,12 +22,12 @@ typedef struct Tokenizer {
         T_UNQUOTE,
         T_UNQUOTE_SPLICING,
     } kind;
-    PicObj data;
+    pic_obj_t data;
 } Tokenizer;
 
 
 typedef struct Parser {
-    PicObj port;
+    pic_obj_t port;
     Tokenizer token;
     bool backtrack;
 } Parser;
@@ -159,25 +159,25 @@ static void back(USE_PARSER)
 
 
 
-static PicObj parse(USE_PARSER);
+static pic_obj_t parse(USE_PARSER);
 
 
-static PicObj parse_abbr(USE_PARSER, PicObj symbol)
+static pic_obj_t parse_abbr(USE_PARSER, pic_obj_t symbol)
 {
-    PicObj obj = parse(parser);
-    PicObj res = pic_list2(symbol, obj);
+    pic_obj_t obj = parse(parser);
+    pic_obj_t res = pic_list2(symbol, obj);
     PIC_XDECREF(obj);
     return res;
 }
 
-static PicObj parse_pair(USE_PARSER)
+static pic_obj_t parse_pair(USE_PARSER)
 {
     next(parser);
 
     if (KIND == T_CLOSE) {
         return PIC_NIL;
     } else {
-        PicObj car, cdr, res;
+        pic_obj_t car, cdr, res;
         back(parser);
         car = parse(parser);
         cdr = parse_pair(parser);
@@ -189,7 +189,7 @@ static PicObj parse_pair(USE_PARSER)
 }
 
 
-static PicObj parse(USE_PARSER)
+static pic_obj_t parse(USE_PARSER)
 {
     next(parser);
 
@@ -217,9 +217,9 @@ static PicObj parse(USE_PARSER)
 }
 
 
-PicObj pic_read(PicObj port)
+pic_obj_t pic_read(pic_obj_t port)
 {
-    PicObj res;
+    pic_obj_t res;
     Parser parser;
     parser.port = port;
     parser.backtrack = false;
@@ -230,12 +230,12 @@ PicObj pic_read(PicObj port)
 }
 
 
-char pic_read_raw(PicObj port)
+char pic_read_raw(pic_obj_t port)
 {
     return getc(PIC_PORT_FILE(port));
 }
 
-void pic_unread_raw(char c, PicObj port)
+void pic_unread_raw(char c, pic_obj_t port)
 {
     ungetc(c, PIC_PORT_FILE(port));
 }
@@ -246,7 +246,7 @@ void pic_unread_raw(char c, PicObj port)
  *******************************************************************************/
 
 static
-void pic_write_pair(PicObj obj, PicObj port)
+void pic_write_pair(pic_obj_t obj, pic_obj_t port)
 {
     FILE * file = PIC_PORT_FILE(port);
 
@@ -263,7 +263,7 @@ void pic_write_pair(PicObj obj, PicObj port)
     }
 }
 
-void pic_write(PicObj obj, PicObj port)
+void pic_write(pic_obj_t obj, pic_obj_t port)
 {
     FILE * file = PIC_PORT_FILE(port);
     
@@ -321,13 +321,13 @@ void pic_write(PicObj obj, PicObj port)
     fflush(stdout);
 }
 
-void pic_print(PicObj obj, PicObj port)
+void pic_print(pic_obj_t obj, pic_obj_t port)
 {
     pic_write(obj, port);
     pic_newline(port);
 }
 
-void pic_newline(PicObj port)
+void pic_newline(pic_obj_t port)
 {
     FILE * file = PIC_PORT_FILE(port);
     fputs("\n", file);

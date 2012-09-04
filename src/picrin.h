@@ -14,7 +14,7 @@
  ******************************************************************************/
 
 
-typedef intptr_t PicObj;
+typedef uintptr_t pic_obj_t;
 
 
 #define PIC_TRUE (0x0f)
@@ -35,14 +35,14 @@ typedef intptr_t PicObj;
 #define PIC_FROM_FIXNUM(obj) ((obj)>>2)
 
 
-typedef struct PicObjHeader {
+typedef struct pic_header {
     int refc;
     int type;
-    void (*dealloc)(PicObj obj);
-} PicObjHeader;
+    void (*dealloc)(pic_obj_t obj);
+} pic_header;
 
 
-#define PIC_HEADEROF(obj) (((PicObjHeader*)(obj))-1)
+#define PIC_HEADEROF(obj) (((pic_header*)(obj))-1)
 #define PIC_REFCOF(obj) (PIC_HEADEROF(obj)->refc)
 #define PIC_TYPEOF(obj) (PIC_HEADEROF(obj)->type)
 #define PIC_DEALLOC(obj) (PIC_HEADEROF(obj)->dealloc)
@@ -53,8 +53,8 @@ typedef struct PicObjHeader {
 #define PIC_XINCREF(obj) ((PIC_POINTERP(obj))? PIC_INCREF(obj) : (void)0)
 #define PIC_XDECREF(obj) ((PIC_POINTERP(obj))? PIC_DECREF(obj) : (void)0)
 
-void * pic_malloc(size_t size, int type, void (*dealloc)(PicObj obj));
-void   pic_free(PicObj obj);
+void * pic_malloc(size_t size, int type, void (*dealloc)(pic_obj_t obj));
+void   pic_free(pic_obj_t obj);
 
 
 /*******************************************************************************
@@ -86,58 +86,58 @@ enum {
 
 
 
-typedef struct PicPair {
-    PicObj car;
-    PicObj cdr;
-} PicPair;
+typedef struct pic_pair_t {
+    pic_obj_t car;
+    pic_obj_t cdr;
+} pic_pair_t;
 
 
-typedef struct PicString {
+typedef struct pic_string_t {
     char data[0];
-} PicString;
+} pic_string_t;
 
 
-typedef struct PicSymbol {
-    PicObj rep;
-} PicSymbol;
+typedef struct pic_symbol_t {
+    pic_obj_t rep;
+} pic_symbol_t;
     
     
-typedef struct PicPort {
+typedef struct pic_port_t {
     FILE * file;
     bool dir;                 /* true for input, false for output */
     bool text;                /* true for textual, false for binary */
     bool stat;                /* true for open, false for close */
-} PicPort;
+} pic_port_t;
 
 
-typedef struct PicSyntax {
+typedef struct pic_syntax_t {
     int kind;
-} PicSyntax;
+} pic_syntax_t;
 
 
-typedef struct PicMacro {
-    PicObj transformer;
-    PicObj macenv;
-} PicMacro;
+typedef struct pic_macro_t {
+    pic_obj_t transformer;
+    pic_obj_t macenv;
+} pic_macro_t;
 
 
-typedef struct PicSynclo {
-    PicObj freeenv;
-    PicObj freevars;
-    PicObj body;
-} PicSynclo;
+typedef struct pic_synclo_t {
+    pic_obj_t freeenv;
+    pic_obj_t freevars;
+    pic_obj_t body;
+} pic_synclo_t;
 
 
-typedef struct PicClosure {
-    PicObj pars;
-    PicObj body;
-    PicObj env;
-} PicClosure;
+typedef struct pic_closure_t {
+    pic_obj_t pars;
+    pic_obj_t body;
+    pic_obj_t env;
+} pic_closure_t;
 
 
-typedef struct PicForeign {
-    PicObj (*func)(PicObj args);
-} PicForeign;
+typedef struct pic_foreign_t {
+    pic_obj_t (*func)(pic_obj_t args);
+} pic_foreign_t;
 
 
 
@@ -153,7 +153,7 @@ typedef struct PicForeign {
 
 /* These accessors LENT the ownership of the return value. */
 
-#define PIC_PAIR(obj) ((PicPair*)(obj))
+#define PIC_PAIR(obj) ((pic_pair_t*)(obj))
 #define PIC_CAR(obj) (PIC_PAIR(obj)->car)
 #define PIC_CDR(obj) (PIC_PAIR(obj)->cdr)
 #define PIC_CAAR(obj) (PIC_CAR(PIC_CAR(obj)))
@@ -163,48 +163,48 @@ typedef struct PicForeign {
 #define PIC_CDDDR(obj) (PIC_CDR(PIC_CDDR(obj)))
 #define PIC_CADDDR(obj) (PIC_CAR(PIC_CDDDR(obj)))
 
-#define PIC_SYMBOL(obj) ((PicSymbol*)(obj))
+#define PIC_SYMBOL(obj) ((pic_symbol_t*)(obj))
 #define PIC_SYMBOL_REP(obj) (PIC_SYMBOL(obj)->rep)
 
-#define PIC_STRING(obj) ((PicString*)(obj))
+#define PIC_STRING(obj) ((pic_string_t*)(obj))
 #define PIC_STRING_DATA(obj) (PIC_STRING(obj)->data)
 
-#define PIC_PORT(obj) ((PicPort*)(obj))
+#define PIC_PORT(obj) ((pic_port_t*)(obj))
 #define PIC_PORT_FILE(obj) (PIC_PORT(obj)->file)
 #define PIC_PORT_DIR(obj)  (PIC_PORT(obj)->dir)
 #define PIC_PORT_TYPE(obj) (PIC_PORT(obj)->type)
 #define PIC_PORT_STAT(obj) (PIC_PORT(obj)->stat)
 
-#define PIC_SYNTAX(obj) ((PicSyntax*)(obj))
+#define PIC_SYNTAX(obj) ((pic_syntax_t*)(obj))
 #define PIC_SYNTAX_KIND(obj) (PIC_SYNTAX(obj)->kind)
 
-#define PIC_CLOSURE(obj) ((PicClosure*)(obj))
+#define PIC_CLOSURE(obj) ((pic_closure_t*)(obj))
 #define PIC_CLOSURE_PARS(obj) (PIC_CLOSURE(obj)->pars)
 #define PIC_CLOSURE_BODY(obj) (PIC_CLOSURE(obj)->body)
 #define PIC_CLOSURE_ENV(obj)  (PIC_CLOSURE(obj)->env)
 
-#define PIC_MACRO(obj) ((PicMacro*)(obj))
+#define PIC_MACRO(obj) ((pic_macro_t*)(obj))
 #define PIC_MACRO_TRANSFORMER(obj) (PIC_MACRO(obj)->transformer)
 #define PIC_MACRO_MACENV(obj) (PIC_MACRO(obj)->macenv)
 
-#define PIC_SYNCLO(obj) ((PicSynclo*)(obj))
+#define PIC_SYNCLO(obj) ((pic_synclo_t*)(obj))
 #define PIC_SYNCLO_FREEENV(obj) (PIC_SYNCLO(obj)->freeenv)
 #define PIC_SYNCLO_FREEVARS(obj) (PIC_SYNCLO(obj)->freevars)
 #define PIC_SYNCLO_BODY(obj) (PIC_SYNCLO(obj)->body)
 
-#define PIC_FOREIGN(obj) ((PicForeign*)(obj))
+#define PIC_FOREIGN(obj) ((pic_foreign_t*)(obj))
 #define PIC_FOREIGN_FUNC(obj) (PIC_FOREIGN(obj)->func)
 
 
-PicObj pic_make_pair(PicObj car, PicObj cdr);
-PicObj pic_make_string(char * str);
-PicObj pic_make_symbol(char * rep);
-PicObj pic_make_port(FILE * file, bool dir, bool text);
-PicObj pic_make_closure(PicObj pars, PicObj body, PicObj env);
-PicObj pic_make_syntax(int kind);
-PicObj pic_make_macro(PicObj transformer, PicObj macenv);
-PicObj pic_make_synclo(PicObj freeenv, PicObj freevars, PicObj body);
-PicObj pic_make_foreign(PicObj (*func)(PicObj args));
+pic_obj_t pic_make_pair(pic_obj_t car, pic_obj_t cdr);
+pic_obj_t pic_make_string(char * str);
+pic_obj_t pic_make_symbol(char * rep);
+pic_obj_t pic_make_port(FILE * file, bool dir, bool text);
+pic_obj_t pic_make_closure(pic_obj_t pars, pic_obj_t body, pic_obj_t env);
+pic_obj_t pic_make_syntax(int kind);
+pic_obj_t pic_make_macro(pic_obj_t transformer, pic_obj_t macenv);
+pic_obj_t pic_make_synclo(pic_obj_t freeenv, pic_obj_t freevars, pic_obj_t body);
+pic_obj_t pic_make_foreign(pic_obj_t (*func)(pic_obj_t args));
 
 
 
@@ -213,15 +213,15 @@ PicObj pic_make_foreign(PicObj (*func)(PicObj args));
  *******************************************************************************/
 
 
-extern PicObj intern_table;        /* an association array */
-extern PicObj curin;
-extern PicObj curout;
-extern PicObj curerr;
+extern pic_obj_t intern_table;        /* an association array */
+extern pic_obj_t curin;
+extern pic_obj_t curout;
+extern pic_obj_t curerr;
 
-extern PicObj PIC_SYMBOL_QUOTE;
-extern PicObj PIC_SYMBOL_QUASIQUOTE;
-extern PicObj PIC_SYMBOL_UNQUOTE;
-extern PicObj PIC_SYMBOL_UNQUOTE_SPLICING;
+extern pic_obj_t PIC_SYMBOL_QUOTE;
+extern pic_obj_t PIC_SYMBOL_QUASIQUOTE;
+extern pic_obj_t PIC_SYMBOL_UNQUOTE;
+extern pic_obj_t PIC_SYMBOL_UNQUOTE_SPLICING;
 
 void pic_init();
 
@@ -232,35 +232,35 @@ void pic_init();
  *******************************************************************************/
 
 
-bool pic_eqp(PicObj x, PicObj y);
-bool pic_eqvp(PicObj x, PicObj y);
-bool pic_equalp(PicObj x, PicObj y); /* FIXME */
+bool pic_eqp(pic_obj_t x, pic_obj_t y);
+bool pic_eqvp(pic_obj_t x, pic_obj_t y);
+bool pic_equalp(pic_obj_t x, pic_obj_t y); /* FIXME */
 
-PicObj pic_cons(PicObj car, PicObj cdr);
-PicObj pic_memq(PicObj key, PicObj list);
-PicObj pic_assq(PicObj key, PicObj alist);
-PicObj pic_assoc(PicObj key, PicObj alist);
-PicObj pic_acons(PicObj key, PicObj val, PicObj alist);
-PicObj pic_list2(PicObj obj1, PicObj obj2);
-PicObj pic_list3(PicObj obj1, PicObj obj2, PicObj obj);
+pic_obj_t pic_cons(pic_obj_t car, pic_obj_t cdr);
+pic_obj_t pic_memq(pic_obj_t key, pic_obj_t list);
+pic_obj_t pic_assq(pic_obj_t key, pic_obj_t alist);
+pic_obj_t pic_assoc(pic_obj_t key, pic_obj_t alist);
+pic_obj_t pic_acons(pic_obj_t key, pic_obj_t val, pic_obj_t alist);
+pic_obj_t pic_list2(pic_obj_t obj1, pic_obj_t obj2);
+pic_obj_t pic_list3(pic_obj_t obj1, pic_obj_t obj2, pic_obj_t obj);
 
-char pic_read_raw(PicObj port);
-void pic_unread_raw(char c, PicObj port);
+char pic_read_raw(pic_obj_t port);
+void pic_unread_raw(char c, pic_obj_t port);
 
-PicObj pic_read(PicObj port);
-void pic_write(PicObj obj, PicObj port);
-void pic_print(PicObj obj, PicObj port);
-void pic_newline(PicObj port);
+pic_obj_t pic_read(pic_obj_t port);
+void pic_write(pic_obj_t obj, pic_obj_t port);
+void pic_print(pic_obj_t obj, pic_obj_t port);
+void pic_newline(pic_obj_t port);
 
-PicObj pic_env_new(PicObj parent);
-PicObj pic_env_get(PicObj sym, PicObj env);
-void pic_env_add(PicObj sym, PicObj val, PicObj env);
-void pic_env_set(PicObj sym, PicObj val, PicObj env);
+pic_obj_t pic_env_new(pic_obj_t parent);
+pic_obj_t pic_env_get(pic_obj_t sym, pic_obj_t env);
+void pic_env_add(pic_obj_t sym, pic_obj_t val, pic_obj_t env);
+void pic_env_set(pic_obj_t sym, pic_obj_t val, pic_obj_t env);
 
-PicObj pic_scheme_report_environment();
+pic_obj_t pic_scheme_report_environment();
 
-PicObj pic_eval(PicObj form, PicObj env);
-PicObj pic_apply(PicObj proc, PicObj args);
+pic_obj_t pic_eval(pic_obj_t form, pic_obj_t env);
+pic_obj_t pic_apply(pic_obj_t proc, pic_obj_t args);
 
 
 /*******************************************************************************
@@ -268,22 +268,22 @@ PicObj pic_apply(PicObj proc, PicObj args);
  *******************************************************************************/
 
 
-PicObj pic_c_eqp(PicObj args);
-PicObj pic_c_pairp(PicObj args);
-PicObj pic_c_symbolp(PicObj args);
+pic_obj_t pic_c_eqp(pic_obj_t args);
+pic_obj_t pic_c_pairp(pic_obj_t args);
+pic_obj_t pic_c_symbolp(pic_obj_t args);
 
-PicObj pic_c_add(PicObj args);
-PicObj pic_c_sub(PicObj args);
-PicObj pic_c_mul(PicObj args);
-PicObj pic_c_eqn(PicObj args);
+pic_obj_t pic_c_add(pic_obj_t args);
+pic_obj_t pic_c_sub(pic_obj_t args);
+pic_obj_t pic_c_mul(pic_obj_t args);
+pic_obj_t pic_c_eqn(pic_obj_t args);
 
-PicObj pic_c_nullp(PicObj args);
-PicObj pic_c_car(PicObj args);
-PicObj pic_c_cdr(PicObj args);
-PicObj pic_c_cons(PicObj args);
+pic_obj_t pic_c_nullp(pic_obj_t args);
+pic_obj_t pic_c_car(pic_obj_t args);
+pic_obj_t pic_c_cdr(pic_obj_t args);
+pic_obj_t pic_c_cons(pic_obj_t args);
 
-PicObj pic_c_make_synclo(PicObj args);
+pic_obj_t pic_c_make_synclo(pic_obj_t args);
 
-PicObj pic_c_write(PicObj args);
+pic_obj_t pic_c_write(pic_obj_t args);
 
 #endif

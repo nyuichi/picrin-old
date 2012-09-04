@@ -3,12 +3,12 @@
 #include <string.h>
 
 
-bool pic_eqp(PicObj x, PicObj y)
+bool pic_eqp(pic_obj_t x, pic_obj_t y)
 {
     return x == y;
 }
 
-bool pic_equalp(PicObj x, PicObj y)
+bool pic_equalp(pic_obj_t x, pic_obj_t y)
 {
     if (x == y) {
         return true;

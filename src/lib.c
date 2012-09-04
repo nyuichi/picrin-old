@@ -1,32 +1,32 @@
 #include "picrin.h"
 
 
-PicObj pic_c_eqp(PicObj args)
+pic_obj_t pic_c_eqp(pic_obj_t args)
 {
     return (PIC_CAR(args) == PIC_CADR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_pairp(PicObj args)
+pic_obj_t pic_c_pairp(pic_obj_t args)
 {
   return PIC_PAIRP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_symbolp(PicObj args)
+pic_obj_t pic_c_symbolp(pic_obj_t args)
 {
   return PIC_SYMBOLP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_add(PicObj args)
+pic_obj_t pic_c_add(pic_obj_t args)
 {
     return PIC_CAR(args) + PIC_CADR(args) - 1;
 }
 
-PicObj pic_c_sub(PicObj args)
+pic_obj_t pic_c_sub(pic_obj_t args)
 {
     return PIC_CAR(args) - PIC_CADR(args) + 1;
 }
 
-PicObj pic_c_mul(PicObj args)
+pic_obj_t pic_c_mul(pic_obj_t args)
 {
     if (PIC_NILP(args)) {
         return PIC_TO_FIXNUM(1);
@@ -36,41 +36,41 @@ PicObj pic_c_mul(PicObj args)
     }
 }
 
-PicObj pic_c_eqn(PicObj args)
+pic_obj_t pic_c_eqn(pic_obj_t args)
 {
     return (PIC_CAR(args) == PIC_CADR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_nullp(PicObj args)
+pic_obj_t pic_c_nullp(pic_obj_t args)
 {
     return PIC_NILP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-PicObj pic_c_make_synclo(PicObj args)
+pic_obj_t pic_c_make_synclo(pic_obj_t args)
 {
     return pic_make_synclo(PIC_CAR(args), PIC_CADR(args), PIC_CADDR(args));
 }
 
-PicObj pic_c_car(PicObj args)
+pic_obj_t pic_c_car(pic_obj_t args)
 {
-    PicObj car = PIC_CAR(PIC_CAR(args));
+    pic_obj_t car = PIC_CAR(PIC_CAR(args));
     PIC_XINCREF(car);
     return car;
 }
 
-PicObj pic_c_cdr(PicObj args)
+pic_obj_t pic_c_cdr(pic_obj_t args)
 {
-    PicObj cdr = PIC_CDR(PIC_CAR(args));
+    pic_obj_t cdr = PIC_CDR(PIC_CAR(args));
     PIC_XINCREF(cdr);
     return cdr;
 }
 
-PicObj pic_c_cons(PicObj args)
+pic_obj_t pic_c_cons(pic_obj_t args)
 {
     return pic_cons(PIC_CAR(args), PIC_CADR(args));
 }
 
-PicObj pic_c_write(PicObj args)
+pic_obj_t pic_c_write(pic_obj_t args)
 {
     pic_write(PIC_CAR(args), curout);
     return PIC_VOID;

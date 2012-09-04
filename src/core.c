@@ -4,15 +4,15 @@
 #include <stdlib.h>
 
 
-PicObj intern_table;
-PicObj curin;
-PicObj curout;
-PicObj curerr;
+pic_obj_t intern_table;
+pic_obj_t curin;
+pic_obj_t curout;
+pic_obj_t curerr;
 
-PicObj PIC_SYMBOL_QUOTE;
-PicObj PIC_SYMBOL_QUASIQUOTE;
-PicObj PIC_SYMBOL_UNQUOTE;
-PicObj PIC_SYMBOL_UNQUOTE_SPLICING;
+pic_obj_t PIC_SYMBOL_QUOTE;
+pic_obj_t PIC_SYMBOL_QUASIQUOTE;
+pic_obj_t PIC_SYMBOL_UNQUOTE;
+pic_obj_t PIC_SYMBOL_UNQUOTE_SPLICING;
 
 void pic_init()
 {
@@ -29,65 +29,65 @@ void pic_init()
     PIC_SYMBOL_UNQUOTE_SPLICING = pic_make_symbol("unquote-splicing");
 }
 
-static void destroy_pair(PicObj obj)
+static void destroy_pair(pic_obj_t obj)
 {
     PIC_XDECREF(PIC_CAR(obj));
     PIC_XDECREF(PIC_CDR(obj));
     pic_free(obj);
 }
 
-PicObj pic_make_pair(PicObj car, PicObj cdr)
+pic_obj_t pic_make_pair(pic_obj_t car, pic_obj_t cdr)
 {
-    PicPair * obj = pic_malloc(sizeof(PicPair),
-                               PIC_TYPE_PAIR,
-                               destroy_pair);
+    pic_pair_t * obj = pic_malloc(sizeof(pic_pair_t),
+                                  PIC_TYPE_PAIR,
+                                  destroy_pair);
     PIC_XINCREF(car);
     PIC_XINCREF(cdr);
     PIC_CAR(obj) = car;
     PIC_CDR(obj) = cdr;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_string(PicObj obj)
+static void destroy_string(pic_obj_t obj)
 {
     pic_free(obj);
 }
 
-PicObj pic_make_string(char * str)
+pic_obj_t pic_make_string(char * str)
 {
-    PicString * obj = pic_malloc(sizeof(PicString) + strlen(str) + 1,
+    pic_string_t * obj = pic_malloc(sizeof(pic_string_t) + strlen(str) + 1,
                                  PIC_TYPE_STRING,
                                  destroy_string);
     strcpy(obj->data, str);
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_symbol(PicObj obj)
+static void destroy_symbol(pic_obj_t obj)
 {
     PIC_XDECREF(PIC_SYMBOL_REP(obj));
     pic_free(obj);
 }
 
-PicObj pic_make_symbol(char * rep)
+pic_obj_t pic_make_symbol(char * rep)
 {
-    PicObj str = pic_make_string(rep);
-    PicObj dat = pic_assoc(str, intern_table);
-    PicObj tmp;
+    pic_obj_t str = pic_make_string(rep);
+    pic_obj_t dat = pic_assoc(str, intern_table);
+    pic_obj_t tmp;
     if (PIC_FALSEP(dat)) {
-        PicSymbol * obj = pic_malloc(sizeof(PicSymbol),
+        pic_symbol_t * obj = pic_malloc(sizeof(pic_symbol_t),
                                      PIC_TYPE_SYMBOL,
                                      destroy_symbol);
         PIC_SYMBOL_REP(obj) = str;
 
         /* Update intern table */
-        tmp = pic_acons(str, (PicObj)obj, intern_table);
+        tmp = pic_acons(str, (pic_obj_t)obj, intern_table);
         PIC_XDECREF(intern_table);
         intern_table = tmp;
         
         PIC_DECREF(str);
-        return (PicObj)obj;
+        return (pic_obj_t)obj;
     } else {
-        PicObj res = PIC_CDR(dat);
+        pic_obj_t res = PIC_CDR(dat);
         PIC_INCREF(res);
         PIC_DECREF(str);
         PIC_DECREF(dat);
@@ -95,37 +95,37 @@ PicObj pic_make_symbol(char * rep)
     }
 }
 
-static void destroy_port(PicObj obj)
+static void destroy_port(pic_obj_t obj)
 {
     pic_free(obj);
 }
 
-PicObj pic_make_port(FILE * file, bool dir, bool text)
+pic_obj_t pic_make_port(FILE * file, bool dir, bool text)
 {
-    PicPort * obj = pic_malloc(sizeof(PicPort),
+    pic_port_t * obj = pic_malloc(sizeof(pic_port_t),
                                 PIC_TYPE_PORT,
                                 destroy_port);
     obj->file = file;
     obj->dir  = dir;
     obj->text = text;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_syntax(PicObj obj)
+static void destroy_syntax(pic_obj_t obj)
 {
     pic_free(obj);
 }
 
-PicObj pic_make_syntax(int kind)
+pic_obj_t pic_make_syntax(int kind)
 {
-    PicSyntax * obj = pic_malloc(sizeof(PicSyntax),
+    pic_syntax_t * obj = pic_malloc(sizeof(pic_syntax_t),
                                  PIC_TYPE_SYNTAX,
                                  destroy_syntax);
     obj->kind = kind;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_closure(PicObj obj)
+static void destroy_closure(pic_obj_t obj)
 {
     PIC_XDECREF(PIC_CLOSURE_PARS(obj));
     PIC_XDECREF(PIC_CLOSURE_BODY(obj));
@@ -133,9 +133,9 @@ static void destroy_closure(PicObj obj)
     pic_free(obj);
 }
 
-PicObj pic_make_closure(PicObj pars, PicObj body, PicObj env)
+pic_obj_t pic_make_closure(pic_obj_t pars, pic_obj_t body, pic_obj_t env)
 {
-    PicClosure * obj = pic_malloc(sizeof(PicClosure),
+    pic_closure_t * obj = pic_malloc(sizeof(pic_closure_t),
                                   PIC_TYPE_CLOSURE,
                                   destroy_closure);
     PIC_XINCREF(pars);
@@ -144,24 +144,24 @@ PicObj pic_make_closure(PicObj pars, PicObj body, PicObj env)
     obj->pars = pars;
     obj->body = body;
     obj->env  = env;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_foreign(PicObj obj)
+static void destroy_foreign(pic_obj_t obj)
 {
     pic_free(obj);
 }
 
-PicObj pic_make_foreign(PicObj (*func)(PicObj args))
+pic_obj_t pic_make_foreign(pic_obj_t (*func)(pic_obj_t args))
 {
-    PicForeign * obj = pic_malloc(sizeof(PicForeign),
+    pic_foreign_t * obj = pic_malloc(sizeof(pic_foreign_t),
                                     PIC_TYPE_FOREIGN,
                                     destroy_foreign);
     obj->func = func;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_synclo(PicObj obj)
+static void destroy_synclo(pic_obj_t obj)
 {
     PIC_XDECREF(PIC_SYNCLO_FREEENV(obj));
     PIC_XDECREF(PIC_SYNCLO_FREEVARS(obj));
@@ -169,9 +169,9 @@ static void destroy_synclo(PicObj obj)
     pic_free(obj);
 }
 
-PicObj pic_make_synclo(PicObj freeenv, PicObj freevars, PicObj body)
+pic_obj_t pic_make_synclo(pic_obj_t freeenv, pic_obj_t freevars, pic_obj_t body)
 {
-    PicSynclo * obj = pic_malloc(sizeof(PicSynclo),
+    pic_synclo_t * obj = pic_malloc(sizeof(pic_synclo_t),
                                  PIC_TYPE_SYNCLO,
                                  destroy_synclo);
     PIC_XINCREF(freeenv);
@@ -180,26 +180,26 @@ PicObj pic_make_synclo(PicObj freeenv, PicObj freevars, PicObj body)
     obj->freeenv = freeenv;
     obj->freevars = freevars;
     obj->body = body;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
-static void destroy_macro(PicObj obj)
+static void destroy_macro(pic_obj_t obj)
 {
     PIC_XDECREF(PIC_MACRO_TRANSFORMER(obj));
     PIC_XDECREF(PIC_MACRO_MACENV(obj));
     pic_free(obj);
 }
 
-PicObj pic_make_macro(PicObj transformer, PicObj macenv)
+pic_obj_t pic_make_macro(pic_obj_t transformer, pic_obj_t macenv)
 {
-    PicMacro * obj = pic_malloc(sizeof(PicMacro),
+    pic_macro_t * obj = pic_malloc(sizeof(pic_macro_t),
                                 PIC_TYPE_MACRO,
                                 destroy_macro);
     PIC_XINCREF(transformer);
     PIC_XINCREF(macenv);
     obj->transformer = transformer;
     obj->macenv = macenv;
-    return (PicObj)obj;
+    return (pic_obj_t)obj;
 }
 
 

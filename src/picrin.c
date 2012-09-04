@@ -9,9 +9,9 @@
     } while(0)
 
 
-void load_init(char * filename, PicObj env)
+void load_init(char * filename, pic_obj_t env)
 {
-    PicObj form, result, port;
+    pic_obj_t form, result, port;
     FILE * file;
     
     file = fopen(filename, "r");
@@ -33,7 +33,7 @@ void load_init(char * filename, PicObj env)
 
 int main(int argc, char ** argv)
 {
-    PicObj form, result, env, port;
+    pic_obj_t form, result, env, port;
 
     puts("Picrin Scheme 0.0.1 [" __DATE__ "]");
 
