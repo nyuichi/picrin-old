@@ -66,7 +66,6 @@ pic_obj_t pic_scheme_report_environment()
     REGISTER_SYNTAX("quote", QUOTE);
     REGISTER_SYNTAX("begin", BEGIN);
     REGISTER_SYNTAX("set!", SET);
-    REGISTER_SYNTAX("define-syntax", DEFSYNTAX);
 
     REGISTER_CFUNC("eq?", pic_c_eqp);
     REGISTER_CFUNC("pair?", pic_c_pairp);
@@ -82,8 +81,6 @@ pic_obj_t pic_scheme_report_environment()
     REGISTER_CFUNC("cdr", pic_c_cdr);
     REGISTER_CFUNC("cons", pic_c_cons);
     
-    REGISTER_CFUNC("make-syntactic-closure", pic_c_make_synclo);
-
     REGISTER_CFUNC("write", pic_c_write);
 
     return env;

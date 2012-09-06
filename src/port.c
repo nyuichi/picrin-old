@@ -294,13 +294,6 @@ void pic_write(pic_obj_t obj, pic_obj_t port)
         case PIC_TYPE_FOREIGN:
             fprintf(file, "#<cfunction>");
             break;
-        case PIC_TYPE_MACRO:
-            fprintf(file, "#<macro>");
-            break;
-        case PIC_TYPE_SYNCLO:
-            fprintf(file, "#synclo");
-            pic_write(PIC_SYNCLO_BODY(obj), port);
-            break;
         }
     } else {
         switch (obj) {

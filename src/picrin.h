@@ -70,8 +70,6 @@ enum {
     PIC_TYPE_CLOSURE,
     PIC_TYPE_PORT,
     PIC_TYPE_FOREIGN,
-    PIC_TYPE_SYNCLO,
-    PIC_TYPE_MACRO,
 };
 
 enum {
@@ -81,7 +79,6 @@ enum {
     PIC_SYNTAX_IF,
     PIC_SYNTAX_QUOTE,
     PIC_SYNTAX_BEGIN,
-    PIC_SYNTAX_DEFSYNTAX,
 };
 
 
@@ -147,7 +144,6 @@ typedef struct pic_foreign_t {
 #define PIC_SYNTAXP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYNTAX)
 #define PIC_CLOSUREP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_CLOSURE)
 #define PIC_FOREIGNP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_FOREIGN)
-#define PIC_SYNCLOP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_SYNCLO)
 #define PIC_MACROP(obj) (PIC_POINTERP(obj) && PIC_TYPEOF(obj) == PIC_TYPE_MACRO)
 
 
@@ -183,15 +179,6 @@ typedef struct pic_foreign_t {
 #define PIC_CLOSURE_BODY(obj) (PIC_CLOSURE(obj)->body)
 #define PIC_CLOSURE_ENV(obj)  (PIC_CLOSURE(obj)->env)
 
-#define PIC_MACRO(obj) ((pic_macro_t*)(obj))
-#define PIC_MACRO_TRANSFORMER(obj) (PIC_MACRO(obj)->transformer)
-#define PIC_MACRO_MACENV(obj) (PIC_MACRO(obj)->macenv)
-
-#define PIC_SYNCLO(obj) ((pic_synclo_t*)(obj))
-#define PIC_SYNCLO_FREEENV(obj) (PIC_SYNCLO(obj)->freeenv)
-#define PIC_SYNCLO_FREEVARS(obj) (PIC_SYNCLO(obj)->freevars)
-#define PIC_SYNCLO_BODY(obj) (PIC_SYNCLO(obj)->body)
-
 #define PIC_FOREIGN(obj) ((pic_foreign_t*)(obj))
 #define PIC_FOREIGN_FUNC(obj) (PIC_FOREIGN(obj)->func)
 
@@ -202,8 +189,6 @@ pic_obj_t pic_make_symbol(char * rep);
 pic_obj_t pic_make_port(FILE * file, bool dir, bool text);
 pic_obj_t pic_make_closure(pic_obj_t pars, pic_obj_t body, pic_obj_t env);
 pic_obj_t pic_make_syntax(int kind);
-pic_obj_t pic_make_macro(pic_obj_t transformer, pic_obj_t macenv);
-pic_obj_t pic_make_synclo(pic_obj_t freeenv, pic_obj_t freevars, pic_obj_t body);
 pic_obj_t pic_make_foreign(pic_obj_t (*func)(pic_obj_t args));
 
 
@@ -281,8 +266,6 @@ pic_obj_t pic_c_nullp(pic_obj_t args);
 pic_obj_t pic_c_car(pic_obj_t args);
 pic_obj_t pic_c_cdr(pic_obj_t args);
 pic_obj_t pic_c_cons(pic_obj_t args);
-
-pic_obj_t pic_c_make_synclo(pic_obj_t args);
 
 pic_obj_t pic_c_write(pic_obj_t args);
 

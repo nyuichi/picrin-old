@@ -46,11 +46,6 @@ pic_obj_t pic_c_nullp(pic_obj_t args)
     return PIC_NILP(PIC_CAR(args))? PIC_TRUE : PIC_FALSE;
 }
 
-pic_obj_t pic_c_make_synclo(pic_obj_t args)
-{
-    return pic_make_synclo(PIC_CAR(args), PIC_CADR(args), PIC_CADDR(args));
-}
-
 pic_obj_t pic_c_car(pic_obj_t args)
 {
     pic_obj_t car = PIC_CAR(PIC_CAR(args));
