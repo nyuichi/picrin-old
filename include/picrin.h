@@ -11,6 +11,8 @@
 #include <string>
 
 
+#define PICRIN_VERSION "0.0.2"
+
 
 /*******************************************************************************
  * Low Level Object
@@ -108,6 +110,8 @@ enum pic_object_type {
   PIC_SYMBOL_T,
   PIC_STRING_T,
   PIC_PORT_T,
+  PIC_CLOSURE_T,
+  PIC_NATIVE_T,
 };
 
 
@@ -135,6 +139,18 @@ struct pic_port_t : pic_obj_t {
 };
 
 
+struct pic_closure_t : pic_obj_t {
+  pic_val_t env;
+  pic_val_t args;
+  pic_val_t body;
+};
+
+
+struct pic_native_t : pic_obj_t {
+  pic_val_t (*function)(pic_val_t args);
+};
+
+
 inline bool pic_objectof(pic_val_t val, pic_object_type type) {
   return pic_objectp(val) && pic_typeof(val) == type;
 }
@@ -155,6 +171,14 @@ inline bool pic_portp(pic_val_t val) {
   return pic_objectof(val, PIC_PORT_T);
 }
 
+inline bool pic_closurep(pic_val_t val) {
+  return pic_objectof(val, PIC_CLOSURE_T);
+}
+
+inline bool pic_nativep(pic_val_t val) {
+  return pic_objectof(val, PIC_NATIVE_T);
+}
+
 
 
 inline pic_pair_t *pic_pair(pic_val_t val) {
@@ -173,10 +197,20 @@ inline pic_port_t *pic_port(pic_val_t val) {
   return static_cast<pic_port_t *>(pic_object(val));
 }
 
+inline pic_closure_t *pic_closure(pic_val_t val) {
+  return static_cast<pic_closure_t *>(pic_object(val));
+}
+
+inline pic_native_t *pic_native(pic_val_t val) {
+  return static_cast<pic_native_t *>(pic_object(val));
+}
+
 pic_val_t pic_make_pair(pic_val_t car, pic_val_t cdr);
 pic_val_t pic_make_string(const std::string &str);
 pic_val_t pic_make_symbol(const std::string &name);
 pic_val_t pic_make_port(FILE * file, bool dir, bool text);
+pic_val_t pic_make_closure(pic_val_t args, pic_val_t body, pic_val_t env);
+pic_val_t pic_make_native(pic_val_t (*function)(pic_val_t args));
 
 
 
@@ -190,6 +224,12 @@ extern pic_val_t current_input_port;
 extern pic_val_t current_output_port;
 extern pic_val_t current_error_port;
 
+
+extern pic_val_t pic_define_sym;
+extern pic_val_t pic_set_sym;
+extern pic_val_t pic_lambda_sym;
+extern pic_val_t pic_if_sym;
+extern pic_val_t pic_begin_sym;
 extern pic_val_t pic_quote_sym;
 extern pic_val_t pic_quasiquote_sym;
 extern pic_val_t pic_unquote_sym;
@@ -220,6 +260,26 @@ inline pic_val_t pic_cdr(pic_val_t val) {
 
 inline pic_val_t pic_caar(pic_val_t val) {
   return pic_car(pic_car(val));
+}
+
+inline pic_val_t pic_cadr(pic_val_t val) {
+  return pic_car(pic_cdr(val));
+}
+
+inline pic_val_t pic_cddr(pic_val_t val) {
+  return pic_cdr(pic_cdr(val));
+}
+
+inline pic_val_t pic_caddr(pic_val_t val) {
+  return pic_car(pic_cddr(val));
+}
+
+inline pic_val_t pic_cdddr(pic_val_t val) {
+  return pic_cdr(pic_cddr(val));
+}
+
+inline pic_val_t pic_cadddr(pic_val_t val) {
+  return pic_car(pic_cdddr(val));
 }
 
 inline pic_val_t pic_cons(pic_val_t car, pic_val_t cdr) {
@@ -261,26 +321,5 @@ pic_val_t pic_scheme_report_environment();
 pic_val_t pic_eval(pic_val_t form, pic_val_t env);
 pic_val_t pic_apply(pic_val_t proc, pic_val_t args);
 
-
-/*******************************************************************************
- * Library
- *******************************************************************************/
-
-
-pic_val_t pic_c_eqp(pic_val_t args);
-pic_val_t pic_c_pairp(pic_val_t args);
-pic_val_t pic_c_symbolp(pic_val_t args);
-
-pic_val_t pic_c_add(pic_val_t args);
-pic_val_t pic_c_sub(pic_val_t args);
-pic_val_t pic_c_mul(pic_val_t args);
-pic_val_t pic_c_eqn(pic_val_t args);
-
-pic_val_t pic_c_nullp(pic_val_t args);
-pic_val_t pic_c_car(pic_val_t args);
-pic_val_t pic_c_cdr(pic_val_t args);
-pic_val_t pic_c_cons(pic_val_t args);
-
-pic_val_t pic_c_write(pic_val_t args);
 
 #endif

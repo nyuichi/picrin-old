@@ -1,87 +1,70 @@
 #include "picrin.h"
 
-pic_obj_t pic_env_new(pic_obj_t parent)
+pic_val_t pic_env_new(pic_val_t parent)
 {
-    return pic_cons(PIC_NIL, parent);
+  return pic_cons(pic_nil, parent);
 }
 
-pic_obj_t pic_env_get(pic_obj_t sym, pic_obj_t env)
+pic_val_t pic_env_get(pic_val_t sym, pic_val_t env)
 {
-    if (PIC_NILP(env)) {
-        return PIC_FALSE;
-    } else {
-        pic_obj_t obj = pic_assq(sym, PIC_CAR(env));
+  if (pic_nilp(env)) {
+    return pic_false;
+  } else {
+    pic_val_t obj = pic_assq(sym, pic_car(env));
         
-        if (PIC_FALSEP(obj)) {
-            return pic_env_get(sym, PIC_CDR(env)); 
-        } else {
-            return obj;
-        }
+    if (pic_falsep(obj)) {
+      return pic_env_get(sym, pic_cdr(env)); 
+    } else {
+      return obj;
     }
+  }
 }
 
-void pic_env_add(pic_obj_t sym, pic_obj_t val, pic_obj_t env)
+void pic_env_add(pic_val_t sym, pic_val_t val, pic_val_t env)
 {
-    pic_obj_t new = pic_acons(sym, val, PIC_CAR(env));
-    PIC_XDECREF(PIC_CAR(env));
-    PIC_CAR(env) = new;
+  pic_val_t pair = pic_acons(sym, val, pic_car(env));
+  pic_pair(env)->car = pair;
 }
 
-void pic_env_set(pic_obj_t sym, pic_obj_t val, pic_obj_t env)
+void pic_env_set(pic_val_t sym, pic_val_t val, pic_val_t env)
 {
-    pic_obj_t obj = pic_env_get(sym, env);
-    PIC_XINCREF(val);
-    PIC_XDECREF(PIC_CDR(obj));
-    PIC_CDR(obj) = val;
-    PIC_XDECREF(obj);
+  pic_val_t obj = pic_env_get(sym, env);
+  pic_pair(obj)->cdr = val;
 }
 
 
-#define REGISTER_SYNTAX(x,y)                                            \
-    do {                                                                \
-        pic_obj_t sym = pic_make_symbol(x);                                \
-        pic_obj_t stx = pic_make_syntax(PIC_SYNTAX_##y);                   \
-        pic_env_add(sym, stx, env);                                     \
-        PIC_DECREF(sym);                                                \
-        PIC_DECREF(stx);                                                \
-    } while(0)
-
-#define REGISTER_CFUNC(x,y)                        \
-    do {                                           \
-        pic_obj_t sym = pic_make_symbol(x);           \
-        pic_obj_t fun = pic_make_foreign(y);          \
-        pic_env_add(sym, fun, env);                \
-        PIC_DECREF(sym);                           \
-        PIC_DECREF(fun);                           \
-    } while(0)
+#define REGISTER_CFUNC(x,y)                     \
+  do {                                          \
+    pic_val_t sym = pic_make_symbol(x);         \
+    pic_val_t fun = pic_make_foreign(y);        \
+    pic_env_add(sym, fun, env);                 \
+    PIC_DECREF(sym);                            \
+    PIC_DECREF(fun);                            \
+  } while(0)
 
 
-pic_obj_t pic_scheme_report_environment()
+pic_val_t pic_scheme_report_environment()
 {
-    pic_obj_t env = pic_env_new(PIC_NIL);
+  pic_val_t env = pic_env_new(pic_nil);
 
-    REGISTER_SYNTAX("define", DEFINE);
-    REGISTER_SYNTAX("lambda", LAMBDA);
-    REGISTER_SYNTAX("if", IF);
-    REGISTER_SYNTAX("quote", QUOTE);
-    REGISTER_SYNTAX("begin", BEGIN);
-    REGISTER_SYNTAX("set!", SET);
+#if 0
+  REGISTER_CFUNC("eq?", pic_c_eqp);
+  REGISTER_CFUNC("pair?", pic_c_pairp);
+  REGISTER_CFUNC("symbol?", pic_c_symbolp);
 
-    REGISTER_CFUNC("eq?", pic_c_eqp);
-    REGISTER_CFUNC("pair?", pic_c_pairp);
-    REGISTER_CFUNC("symbol?", pic_c_symbolp);
+  REGISTER_CFUNC("+", pic_c_add);
+  REGISTER_CFUNC("-", pic_c_sub);
+  REGISTER_CFUNC("*", pic_c_mul);
+  REGISTER_CFUNC("=", pic_c_eqn);
 
-    REGISTER_CFUNC("+", pic_c_add);
-    REGISTER_CFUNC("-", pic_c_sub);
-    REGISTER_CFUNC("*", pic_c_mul);
-    REGISTER_CFUNC("=", pic_c_eqn);
-
-    REGISTER_CFUNC("null?", pic_c_nullp);
-    REGISTER_CFUNC("car", pic_c_car);
-    REGISTER_CFUNC("cdr", pic_c_cdr);
-    REGISTER_CFUNC("cons", pic_c_cons);
+  REGISTER_CFUNC("null?", pic_c_nullp);
+  REGISTER_CFUNC("car", pic_c_car);
+  REGISTER_CFUNC("cdr", pic_c_cdr);
+  REGISTER_CFUNC("cons", pic_c_cons);
     
-    REGISTER_CFUNC("write", pic_c_write);
+  REGISTER_CFUNC("write", pic_c_write);
 
-    return env;
+#endif
+
+  return env;
 }

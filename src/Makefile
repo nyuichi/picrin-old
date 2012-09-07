@@ -1,13 +1,13 @@
-CXXFLAGS += -g -Wall -Wextra -MMD -MP
+CXXFLAGS += -g -Wall -Wextra -MMD -MP -I../include
 CC=g++
 
-TARG = picrin.o bool.o core.o list.o port.o
+TARG = picrin.o bool.o core.o list.o port.o eval.o env.o
 
-all: picrin
+all: picrin run
 
 picrin: $(TARG)
 
-test:
+run:
 	./picrin ../init.scm
 
 clean:

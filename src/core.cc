@@ -9,6 +9,11 @@ pic_val_t current_input_port;
 pic_val_t current_output_port;
 pic_val_t current_error_port;
 
+pic_val_t pic_define_sym;
+pic_val_t pic_set_sym;
+pic_val_t pic_lambda_sym;
+pic_val_t pic_if_sym;
+pic_val_t pic_begin_sym;
 pic_val_t pic_quote_sym;
 pic_val_t pic_quasiquote_sym;
 pic_val_t pic_unquote_sym;
@@ -23,6 +28,11 @@ void pic_init()
 
   intern_table = pic_nil;
 
+  pic_define_sym = pic_make_symbol("define");
+  pic_set_sym = pic_make_symbol("set!");
+  pic_lambda_sym = pic_make_symbol("lambda");
+  pic_if_sym = pic_make_symbol("if");;
+  pic_begin_sym = pic_make_symbol("begin");
   pic_quote_sym = pic_make_symbol("quote");
   pic_quasiquote_sym = pic_make_symbol("quasiquote");
   pic_unquote_sym = pic_make_symbol("unquote");
@@ -68,8 +78,19 @@ pic_val_t pic_make_symbol(const std::string &name)
 pic_val_t pic_make_port(FILE *file, bool dir, bool text)
 {
   pic_port_t *obj = new pic_port_t;
+  obj->type = PIC_PORT_T;
   obj->file = file;
   obj->dir  = dir;
   obj->text = text;
+  return pic_val(obj);
+}
+
+pic_val_t pic_make_closure(pic_val_t args, pic_val_t body, pic_val_t env)
+{
+  pic_closure_t *obj = new pic_closure_t;
+  obj->type = PIC_CLOSURE_T;
+  obj->args = args;
+  obj->body = body;
+  obj->env = env;
   return pic_val(obj);
 }
