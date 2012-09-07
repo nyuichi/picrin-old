@@ -1,8 +1,9 @@
-CFLAGS += -g -Wall -Wextra -MMD -MP
+CXXFLAGS += -g -Wall -Wextra -MMD -MP
+CC=g++
 
-TARG = picrin.o bool.o env.o eval.o core.o gc.o list.o port.o lib.o
+TARG = picrin.o bool.o core.o list.o port.o
 
-all: picrin test
+all: picrin
 
 picrin: $(TARG)
 

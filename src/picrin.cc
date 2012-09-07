@@ -9,6 +9,8 @@
     } while(0)
 
 
+#if 0
+
 void load_init(char * filename, pic_obj_t env)
 {
     pic_obj_t form, result, port;
@@ -69,4 +71,13 @@ int main(int argc, char ** argv)
     puts("good-bye");
     PIC_DECREF(env);
     PIC_DECREF(port);
+}
+
+#endif
+
+int main() {
+  pic_init();
+  for (;;) {
+    pic_print(pic_read(current_input_port), current_output_port);
+  }
 }
