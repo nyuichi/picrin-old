@@ -1,4 +1,4 @@
-CXXFLAGS += -g -Wall -Wextra -MMD -MP -I../include
+CXXFLAGS += -g -Wall -Wextra -MMD -MP
 CC=g++
 
 TARG = picrin.o bool.o core.o list.o port.o eval.o env.o
