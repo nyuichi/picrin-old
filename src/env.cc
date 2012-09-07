@@ -34,6 +34,12 @@ void pic_env_set(pic_val_t sym, pic_val_t val, pic_val_t env)
 }
 
 
+#define REGISTER_SYNTAX(x,y)                    \
+  do {                                          \
+    pic_val_t sym = pic_make_symbol(x);         \
+    pic_env_add(sym, y, env);                   \
+  } while (0)
+
 #define REGISTER_CFUNC(x,y)                     \
   do {                                          \
     pic_val_t sym = pic_make_symbol(x);         \
@@ -46,18 +52,25 @@ pic_val_t pic_scheme_report_environment()
 {
   pic_val_t env = pic_env_new(pic_nil);
 
+  REGISTER_SYNTAX("define", pic_define_syntax);
+  REGISTER_SYNTAX("set!", pic_set_syntax);
+  REGISTER_SYNTAX("begin", pic_begin_syntax);
+  REGISTER_SYNTAX("quote", pic_quote_syntax);
+  REGISTER_SYNTAX("lambda", pic_lambda_syntax);
+  REGISTER_SYNTAX("if", pic_if_syntax);
+
   REGISTER_CFUNC("eq?", pic_c_eqp);
   REGISTER_CFUNC("pair?", pic_c_pairp);
   REGISTER_CFUNC("symbol?", pic_c_symbolp);
 
   REGISTER_CFUNC("+", pic_c_add);
   REGISTER_CFUNC("-", pic_c_sub);
-   REGISTER_CFUNC("=", pic_c_eqn);
+  REGISTER_CFUNC("=", pic_c_eqn);
 
   REGISTER_CFUNC("null?", pic_c_nullp);
   REGISTER_CFUNC("car", pic_c_car);
   REGISTER_CFUNC("cdr", pic_c_cdr);
   REGISTER_CFUNC("cons", pic_c_cons);
     
-   return env;
+  return env;
 }

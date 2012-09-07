@@ -247,9 +247,23 @@ void pic_write(pic_val_t obj, pic_val_t port)
         fprintf(file, "#<port>");
         break;
       }
+      case PIC_NATIVE_T: {
+        fprintf(file, "#<native>");
+        break;
+      }
     }
   } else {
+
+#define ccase(x,y) case x: fprintf(file, y); break;
+
     switch (obj) {
+      ccase(0x03, "OP_PUSH");
+      ccase(0x13, "OP_CALL");
+      ccase(0x23, "OP_GREF");
+      ccase(0x33, "OP_GSET");
+      ccase(0x43, "OP_JMP");
+      ccase(0x53, "OP_JMZ");
+
       case pic_true:
         fprintf(file, "#t");
         break;
@@ -260,6 +274,9 @@ void pic_write(pic_val_t obj, pic_val_t port)
         fprintf(file, "()");
         break;
       case pic_void:
+        break;
+      case pic_undef:
+        fprintf(file, "#undef");
         break;
     }
   }

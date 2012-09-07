@@ -344,5 +344,6 @@ pic_val_t pic_scheme_report_environment();
 pic_val_t pic_eval(pic_val_t form, pic_val_t env);
 pic_val_t pic_apply(pic_val_t proc, pic_val_t args);
 
+pic_val_t pic_gensym(const std::string &name);
 
 #endif

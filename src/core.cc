@@ -101,3 +101,10 @@ pic_val_t pic_make_native(pic_val_t (*function)(pic_val_t args)) {
   obj->function = function;
   return pic_val(obj);
 }
+
+pic_val_t pic_gensym(const std::string &name) {
+  pic_symbol_t *obj = new pic_symbol_t;
+  obj->type = PIC_SYMBOL_T;
+  obj->str = pic_make_string(name);
+  return pic_val(obj);
+}
