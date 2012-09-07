@@ -208,7 +208,7 @@ inline bool pic_eqp(pic_val_t x, pic_val_t y) {
   return x == y;
 }
 
-bool pic_equalp(pic_val_t x, pic_val_t y); /* FIXME */
+bool pic_equalp(pic_val_t x, pic_val_t y);
 
 inline pic_val_t pic_car(pic_val_t val) {
   return pic_pair(val)->car;
@@ -243,12 +243,12 @@ pic_val_t pic_assq(pic_val_t key, pic_val_t alist);
 pic_val_t pic_assoc(pic_val_t key, pic_val_t alist);
 pic_val_t pic_acons(pic_val_t key, pic_val_t val, pic_val_t alist);
 
+pic_val_t pic_read(pic_val_t port = current_input_port);
 char pic_read_char(pic_val_t port);
 void pic_unread_char(char c, pic_val_t port);
 
-pic_val_t pic_read(pic_val_t port);
-void pic_write(pic_val_t obj, pic_val_t port);
-void pic_print(pic_val_t obj, pic_val_t port);
+void pic_write(pic_val_t obj, pic_val_t port = current_output_port);
+void pic_print(pic_val_t obj, pic_val_t port = current_output_port);
 void pic_newline(pic_val_t port);
 
 pic_val_t pic_env_new(pic_val_t parent);

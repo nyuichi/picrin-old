@@ -78,6 +78,6 @@ int main(int argc, char ** argv)
 int main() {
   pic_init();
   for (;;) {
-    pic_print(pic_read(current_input_port), current_output_port);
+    pic_print(pic_read());
   }
 }
