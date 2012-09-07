@@ -1,7 +1,7 @@
 CXXFLAGS += -g -Wall -Wextra -MMD -MP
 CC=g++
 
-TARG = picrin.o bool.o core.o list.o port.o eval.o env.o
+TARG = picrin.o bool.o core.o list.o port.o eval.o env.o lib.o
 
 all: picrin run
 

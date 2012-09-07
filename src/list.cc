@@ -49,3 +49,29 @@ pic_val_t pic_assoc(pic_val_t key, pic_val_t alist)
     }
   }
 }
+
+bool pic_listp(pic_val_t val) {
+  if (pic_nilp(val)) {
+    return true;
+  }
+  else if (pic_pairp(val)) {
+    return pic_listp(pic_cdr(val));
+  }
+  else {
+    return false;
+  }
+}
+
+static pic_val_t pic_reverse_(pic_val_t list, pic_val_t acc) {
+  if (pic_nilp(list)) {
+    return acc;
+  }
+  else {
+    return pic_reverse_(pic_cdr(list), pic_cons(pic_car(list), acc));
+  }
+}
+
+pic_val_t pic_reverse(pic_val_t list) {
+  return pic_reverse_(list, pic_nil);
+}
+

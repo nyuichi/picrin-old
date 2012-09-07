@@ -28,6 +28,7 @@ const pic_val_t pic_true  = 0x0f;
 const pic_val_t pic_false = 0x1f;
 const pic_val_t pic_nil   = 0x2f;
 const pic_val_t pic_void  = 0x3f;
+const pic_val_t pic_undef = 0xff;
 
 
 inline bool pic_nilp(pic_val_t val) {
@@ -44,6 +45,25 @@ inline bool pic_falsep(pic_val_t val) {
 
 inline bool pic_voidp(pic_val_t val) {
   return val == pic_void;
+}
+
+inline bool pic_undefp(pic_val_t val) {
+  return val == pic_undef;
+}
+
+
+// 1'. Syntax
+
+const pic_val_t pic_define_syntax = 0x0b;
+const pic_val_t pic_set_syntax = 0x1b;
+const pic_val_t pic_lambda_syntax = 0x2b;
+const pic_val_t pic_if_syntax = 0x3b;
+const pic_val_t pic_begin_syntax = 0x4b;
+const pic_val_t pic_quote_syntax = 0x5b;
+
+
+inline bool pic_syntaxp(pic_val_t val) {
+  return (val & 0x0f) == 0x0b;
 }
 
 
@@ -64,11 +84,11 @@ inline int pic_int(pic_val_t val) {
 // 3. Character
 
 inline bool pic_characterp(pic_val_t val) {
-  return (val & 0x0f) == 0x0b;
+  return (val & 0x0f) == 0x07;
 }
 
 inline bool pic_character(char c) {
-  return (c << 4) | 0x0b;
+  return (c << 4) | 0x07;
 }
 
 inline char pic_char(char c) {
@@ -297,6 +317,9 @@ inline pic_val_t pic_list(pic_val_t obj1, pic_val_t obj2) {
 inline pic_val_t pic_list(pic_val_t obj1, pic_val_t obj2, pic_val_t obj3) {
   return pic_cons(obj1, pic_list(obj2, obj3));
 }
+
+bool pic_listp(pic_val_t val);
+pic_val_t pic_reverse(pic_val_t list);
 
 pic_val_t pic_memq(pic_val_t key, pic_val_t list);
 pic_val_t pic_assq(pic_val_t key, pic_val_t alist);

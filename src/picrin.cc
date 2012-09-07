@@ -45,7 +45,7 @@ int main(int argc, char ** argv)
         abort();
     }
     puts("loading init...");
-    load_init(argv[1], env);
+    //    load_init(argv[1], env);
 
     /* Run loop */
     for (;;) {

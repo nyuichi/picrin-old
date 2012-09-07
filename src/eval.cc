@@ -1,112 +1,127 @@
 #include "picrin.h"
 
 
-static pic_val_t pic_eval_all(pic_val_t list, pic_val_t env)
-{
-  if (pic_nilp(list)) {
-    return pic_nil;
-  }
-  else {
-    pic_val_t car, cdr;
-    car = pic_eval(pic_car(list), env);
-    cdr = pic_eval_all(pic_cdr(list), env);
-    return pic_cons(car, cdr);
-  }
-}
+enum pic_opcode {
+  OP_PUSH = 0x03,
+  OP_CALL = 0x13,
+  OP_GREF = 0x23,
+};
+
+#if 0
+
+(+ 1 2)
+
+((OP_PUSH 2)
+ (OP_PUSH 1)
+ (OP_GREF box_+)
+ (OP_CALL 2))
+
+#endif
 
 
-static void pic_add_all(pic_val_t pars, pic_val_t args, pic_val_t env)
-{
-  if (pic_nilp(pars) && pic_nilp(args)) {
-    return;
-  }
-  else if (pic_symbolp(pars)) {
-    pic_env_add(pars, args, env);
-  }
-  else {
-    pic_env_add(pic_car(pars), pic_car(args), env);
-    pic_add_all(pic_cdr(pars), pic_cdr(args), env);
-  }
-}
-
-pic_val_t pic_eval(pic_val_t form, pic_val_t env)
-{
-  // printf("evaluating..."); pic_print(form, curout);
-
+pic_val_t pic_generate(pic_val_t form, pic_val_t env, pic_val_t code) {
   if (pic_symbolp(form)) {
-    pic_val_t pair = pic_env_get(form, env);
-    if (pic_falsep(pair)) {
-      printf("undefined symbol: ");
-      pic_print(form, current_error_port);
-      abort();
-    }
-    return pic_cdr(pair);
+    pic_val_t cmd = pic_list(OP_GREF, pic_env_get(form, env));
+    return pic_cons(cmd, code);
   }
   else if (! pic_pairp(form)) {
-    return form;
+    pic_val_t cmd = pic_list(OP_PUSH, form);
+    return pic_cons(cmd, code);
+  }
+  else if (pic_listp(form)) {
+    int n = -1;
+    form = pic_reverse(form);
+
+    while (! pic_nilp(form)) {
+      code = pic_generate(pic_car(form), env, code);
+      form = pic_cdr(form);
+      ++n;
+    }
+    
+    pic_val_t cmd = pic_list(OP_CALL, n);
+    return pic_cons(cmd, code);
   }
   else {
-    pic_val_t proc = pic_car(form);
-
-    if (pic_symbolp(proc)) {
-      if (pic_eqp(proc, pic_define_sym)) {
-        pic_val_t var = pic_cadr(form);
-        pic_val_t val = pic_eval(pic_caddr(form), env);
-        pic_env_add(var, val, env);
-        return pic_void;
-      }
-      else if (pic_eqp(proc, pic_set_sym)) {
-        pic_val_t var = pic_cadr(form);
-        pic_val_t val = pic_eval(pic_caddr(form), env);
-        pic_env_set(var, val, env);
-        return pic_void;
-      }
-      else if (pic_eqp(proc, pic_lambda_sym)) {
-        pic_val_t params = pic_cadr(form);
-        pic_val_t body = pic_caddr(form);
-        return pic_make_closure(params, body, env);
-      }
-      else if (pic_eqp(proc, pic_if_sym)) {
-        pic_val_t test = pic_eval(pic_cadr(form), env);
-        if (pic_falsep(test)) {
-          return pic_eval(pic_cadddr(form), env);
-        }
-        else {
-          return pic_eval(pic_caddr(form), env);
-        }
-      }
-      else if (pic_eqp(proc, pic_quote_sym)) {
-        return pic_cadr(form);
-      }
-      else if (pic_eqp(proc, pic_begin_sym)) {
-        pic_val_t exprs = pic_cdr(form), res = pic_void;
-        while (! pic_nilp(exprs)) {
-          res = pic_eval(pic_car(exprs), env);
-          exprs = pic_cdr(exprs);
-        }
-        return res;
-      }
-    }
-
-    proc = pic_eval(proc, env);
-    return pic_apply(proc, pic_eval_all(pic_cdr(form), env));
+    perror("dotted list in source");
+    abort();
   }
 }
 
+pic_val_t pic_compile(pic_val_t form, pic_val_t env) {
+  return pic_reverse(pic_generate(form, env, pic_nil));
+}
 
-pic_val_t pic_apply(pic_val_t proc, pic_val_t args)
-{
-  if (pic_closurep(proc)) {
-    pic_val_t env = pic_env_new(pic_closure(proc)->env);
-    pic_add_all(pic_closure(proc)->args, args, env);
-    return pic_eval(pic_closure(proc)->body, env);
+
+pic_val_t pic_unbox(pic_val_t box) {
+  return pic_cdr(box);
+}
+
+pic_val_t pic_box_name(pic_val_t box) {
+  return pic_car(box);
+}
+
+
+#define ARG1() pic_cadr(cmd)
+#define PUSH(value) stack = pic_cons(value, stack)
+#define PEEK() pic_car(stack)
+#define POP() stack = pic_cdr(stack)
+
+
+pic_val_t pic_vm(pic_val_t code, pic_val_t stack) {
+
+  while (! pic_nilp(code)) {
+    pic_val_t cmd = pic_car(code);
+
+    switch (pic_car(cmd)) {
+      case OP_PUSH: {
+        PUSH(ARG1());
+        break;
+      }
+      case OP_CALL: {
+        pic_val_t proc = PEEK(); POP();
+
+        if (pic_closurep(proc)) {
+          // TODO
+          perror("FIXME: cannot call closures for now");
+          abort();
+        }
+        else if (pic_nativep(proc)) {
+          pic_val_t args = pic_nil;
+          for (int i = 0, len = ARG1(); i < len; ++i) {
+            args = pic_cons(PEEK(), args);
+            POP();
+          }
+          args = pic_reverse(args);
+          pic_val_t (*function)(pic_val_t args) = pic_native(proc)->function;
+          PUSH(function(args));
+          break;
+        }
+        else {
+          perror("Invalid application");
+          abort();
+        }
+      }
+      case OP_GREF: {
+        pic_val_t value = pic_unbox(ARG1());
+        if (value == pic_undef) {
+          fputs("unbound variable: ", stderr);
+          pic_print(pic_box_name(ARG1()));
+          abort();
+        }
+        stack = pic_cons(value, stack);
+        break;
+      }
+    }
+
+    code = pic_cdr(code);
   }
-  else if (pic_nativep(proc)) {
-    pic_val_t (*callee)(pic_val_t args) = pic_native(proc)->function;
-    return callee(args);
-  }
-  else {
-    perror("Invalid application");
-    abort();
-  }
+
+  return pic_car(stack);
+}
+
+pic_val_t pic_eval(pic_val_t form, pic_val_t env) {
+  puts("compiling...");
+  pic_val_t code = pic_compile(form, env);
+  puts("compiled");
+  return pic_vm(code, pic_nil);
 }

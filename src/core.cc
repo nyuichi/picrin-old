@@ -94,3 +94,10 @@ pic_val_t pic_make_closure(pic_val_t args, pic_val_t body, pic_val_t env)
   obj->env = env;
   return pic_val(obj);
 }
+
+pic_val_t pic_make_native(pic_val_t (*function)(pic_val_t args)) {
+  pic_native_t *obj = new pic_native_t;
+  obj->type = PIC_NATIVE_T;
+  obj->function = function;
+  return pic_val(obj);
+}
