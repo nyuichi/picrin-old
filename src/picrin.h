@@ -320,6 +320,8 @@ inline pic_val_t pic_list(pic_val_t obj1, pic_val_t obj2, pic_val_t obj3) {
 
 bool pic_listp(pic_val_t val);
 pic_val_t pic_reverse(pic_val_t list);
+pic_val_t pic_append(pic_val_t list1, pic_val_t list2);
+pic_val_t pic_delete_eq(pic_val_t x, pic_val_t list);
 
 pic_val_t pic_memq(pic_val_t key, pic_val_t list);
 pic_val_t pic_assq(pic_val_t key, pic_val_t alist);
@@ -338,7 +340,9 @@ pic_val_t pic_env_new(pic_val_t parent);
 pic_val_t pic_env_get(pic_val_t sym, pic_val_t env);
 void pic_env_add(pic_val_t sym, pic_val_t val, pic_val_t env);
 void pic_env_set(pic_val_t sym, pic_val_t val, pic_val_t env);
+bool pic_env_freevarp(pic_val_t sym, pic_val_t env);
 
+pic_val_t pic_minimal_environment();
 pic_val_t pic_scheme_report_environment();
 
 pic_val_t pic_eval(pic_val_t form, pic_val_t env);

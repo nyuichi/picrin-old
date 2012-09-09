@@ -75,3 +75,25 @@ pic_val_t pic_reverse(pic_val_t list) {
   return pic_reverse_(list, pic_nil);
 }
 
+pic_val_t pic_append(pic_val_t list1, pic_val_t list2) {
+  if (pic_nilp(list1)) {
+    return list2;
+  }
+  else {
+    return pic_cons(pic_car(list1), pic_append(pic_cdr(list1), list2));
+  }
+}
+
+pic_val_t pic_delete_eq(pic_val_t x, pic_val_t list) {
+  if (pic_nilp(list)) {
+    return pic_nil;
+  }
+  else {
+    if (pic_eqp(x, pic_car(list))) {
+      return pic_delete_eq(x, pic_cdr(list));
+    }
+    else {
+      return pic_cons(pic_car(list), pic_delete_eq(x, pic_cdr(list)));
+    }
+  }
+}

@@ -257,12 +257,18 @@ void pic_write(pic_val_t obj, pic_val_t port)
 #define ccase(x,y) case x: fprintf(file, y); break;
 
     switch (obj) {
-      ccase(0x03, "OP_PUSH");
-      ccase(0x13, "OP_CALL");
-      ccase(0x23, "OP_GREF");
-      ccase(0x33, "OP_GSET");
-      ccase(0x43, "OP_JMP");
-      ccase(0x53, "OP_JMZ");
+      ccase(0x03, "PUSH");
+      ccase(0x13, "CALL");
+      ccase(0x23, "GREF");
+      ccase(0x33, "GSET");
+      ccase(0x43, "JMP");
+      ccase(0x53, "JMZ");
+      ccase(pic_lambda_syntax, "lambda*");
+      ccase(pic_define_syntax, "define*");
+      ccase(pic_set_syntax, "set!*");
+      ccase(pic_if_syntax, "if*");
+      ccase(pic_quote_syntax, "quote*");
+      ccase(pic_begin_syntax, "begin*");
 
       case pic_true:
         fprintf(file, "#t");

@@ -33,6 +33,27 @@ void pic_env_set(pic_val_t sym, pic_val_t val, pic_val_t env)
   pic_pair(obj)->cdr = val;
 }
 
+static int pic_env_level(pic_val_t sym, int level, pic_val_t env) {
+  if (pic_nilp(pic_cdr(env))) {
+    return -1;
+  }
+  else {
+    pic_val_t obj = pic_assq(sym, pic_car(env));
+
+    if (pic_falsep(obj)) {
+      return pic_env_level(sym, level + 1, pic_cdr(env));
+    }
+    else {
+      return level;
+    }
+  }
+}
+
+bool pic_env_freevarp(pic_val_t sym, pic_val_t env) {
+  int level = pic_env_level(sym, 0, env);
+  return level != 0 && level != -1;
+}
+
 
 #define REGISTER_SYNTAX(x,y)                    \
   do {                                          \
@@ -46,6 +67,20 @@ void pic_env_set(pic_val_t sym, pic_val_t val, pic_val_t env)
     pic_val_t fun = pic_make_native(y);         \
     pic_env_add(sym, fun, env);                 \
   } while(0)
+
+
+pic_val_t pic_minimal_environment() {
+  pic_val_t env = pic_env_new(pic_nil);
+
+  REGISTER_SYNTAX("define", pic_define_syntax);
+  REGISTER_SYNTAX("set!", pic_set_syntax);
+  REGISTER_SYNTAX("begin", pic_begin_syntax);
+  REGISTER_SYNTAX("quote", pic_quote_syntax);
+  REGISTER_SYNTAX("lambda", pic_lambda_syntax);
+  REGISTER_SYNTAX("if", pic_if_syntax);
+
+  return env;
+}
 
 
 pic_val_t pic_scheme_report_environment()

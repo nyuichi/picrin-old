@@ -31,8 +31,200 @@ enum pic_opcode {
  (CALL 2)            ;; (+ 1 ...)
  )
 
+
+;; 1. ordinally
+(begin
+ (define f (lambda (x) (+ x 1)))
+ (f 1))
+
+  ; analyzed
+  (begin
+   (define f (lambda (x) () (+ x 1)))
+   (f 1))
+
+  ; generated
+  ((JUMP MAIN)
+   CLOSURE0
+   (LREF 0)
+   (LREF 0)
+   (GREF box_+)
+   (CALL 2)
+   (RETURN)
+   MAIN
+   (CLOSURE 0 CLOSURE0)
+   (GSET box_f)
+   (POP)
+   (PUSH 1)
+   (GREF box_f)
+   (CALL 1))
+   
+
+;; 2. free variable
+(begin
+ (define f (lambda (a) (lambda (b) (+ a b))))
+ (define g (f 1))
+ (g 2))
+
+  ; analyzed
+  (begin
+   (define f (lambda (a) () (lambda (b) (a) (+ a b))))
+   (define g (f 1))
+   (g 2))
+   
+  ; generated
+  ((JUMP MAIN)
+   CLOSURE0
+   (LREF 0)
+   (CLOSURE 1 CLOSURE1)
+   (RETURN)
+   CLOSURE1
+   (LREF 0)
+   (CREF 0)
+   (GREF box_+)
+   (CALL 2)
+   (RETURN)
+   MAIN
+   (CLOSURE 0 CLOSURE0)
+   (GSET box_f)
+   (POP)
+   (PUSH 1)
+   (GREF box_f)
+   (CALL 1)
+   (GSET box_g)
+   (POP)
+   (PUSH 1)
+   (GREF box_g)
+   (CALL 1))
+
+;;
+
 #endif
 
+
+#define PUSH_FORM(x) form_stack = pic_cons(x, form_stack)
+#define PEEK_FORM() pic_car(form_stack)
+#define POP_FORM() form_stack = pic_cdr(form_stack)
+
+#define PUSH_FREEVAR(x) free_vars = pic_cons(x, free_vars)
+#define PUSH_FREEVARS(xs) free_vars = pic_append(xs, free_vars)
+
+#define RESOLVE_SYNTAX_OPERATOR(x) pic_pair(form)->car = x
+
+pic_val_t pic_analyze(pic_val_t form, pic_val_t env) {
+  pic_val_t free_vars = pic_nil, form_stack = pic_nil;
+
+  PUSH_FORM(form);
+  while (! pic_nilp(form_stack)) {
+    form = PEEK_FORM(); POP_FORM();
+    if (pic_symbolp(form)) {
+      if (pic_env_freevarp(form, env)) {
+        PUSH_FREEVAR(form);
+      }
+      continue;
+    } else if (! pic_pairp(form)) {
+      continue;
+    }
+    else if (pic_listp(form)) {
+      pic_val_t proc = pic_car(form);
+    
+      if (pic_symbolp(proc)) {
+        pic_val_t res = pic_env_get(proc, env);
+
+        if (pic_pairp(res) && pic_syntaxp(pic_cdr(res))) {
+          switch (pic_cdr(res)) {
+            case pic_define_syntax: {
+              RESOLVE_SYNTAX_OPERATOR(pic_define_syntax);
+              pic_env_add(pic_cadr(form), pic_undef, env);
+              PUSH_FORM(pic_caddr(form));
+              continue;
+            }
+            case pic_set_syntax: {
+              RESOLVE_SYNTAX_OPERATOR(pic_set_syntax);
+              PUSH_FORM(pic_caddr(form));
+              continue;
+            }
+            case pic_begin_syntax: {
+              RESOLVE_SYNTAX_OPERATOR(pic_begin_syntax);
+              pic_val_t exprs = pic_cdr(form);
+              while (! pic_nilp(exprs)) {
+                PUSH_FORM(pic_car(exprs));
+                exprs = pic_cdr(exprs);
+              }
+              continue;
+            }
+            case pic_quote_syntax: {
+              RESOLVE_SYNTAX_OPERATOR(pic_quote_syntax);
+              continue;
+            }
+            case pic_if_syntax: {
+              RESOLVE_SYNTAX_OPERATOR(pic_if_syntax);
+              PUSH_FORM(pic_cadr(form));
+              PUSH_FORM(pic_caddr(form));
+              PUSH_FORM(pic_cadddr(form));
+              continue;
+            }
+            case pic_lambda_syntax: {
+              RESOLVE_SYNTAX_OPERATOR(pic_lambda_syntax);
+              pic_val_t formals = pic_cadr(form);
+
+              pic_val_t local_env = pic_env_new(env);
+              for (;;) {
+                if (pic_nilp(formals)) {
+                  break;
+                }
+                else if (pic_symbolp(formals)) {
+                  pic_env_add(formals, pic_undef, local_env);
+                  break;
+                }
+                else {
+                  pic_env_add(pic_car(formals), pic_undef, local_env);
+                  formals = pic_cdr(formals);
+                }
+              }
+
+              pic_val_t fvs = pic_analyze(pic_caddr(form), local_env);
+
+              formals = pic_cadr(form);
+              for (;;) {
+                if (pic_nilp(formals)) {
+                  break;
+                }
+                else if (pic_symbolp(formals)) {
+                  fvs = pic_delete_eq(formals, fvs);
+                  break;
+                }
+                else {
+                  fvs = pic_delete_eq(pic_car(formals), fvs);
+                  formals = pic_cdr(formals);
+                }
+              }
+              
+              PUSH_FREEVARS(fvs);
+              pic_pair(pic_cdr(form))->cdr = pic_list(fvs, pic_caddr(form));
+              continue;
+            }
+            default: {
+              perror("unsupported operation");
+              abort();
+            }
+          }
+        }
+      }
+
+      pic_val_t exprs = form;
+      while (! pic_nilp(exprs)) {
+        PUSH_FORM(pic_car(exprs));
+        exprs = pic_cdr(exprs);
+      }
+      continue;
+    }
+    else {
+      perror("dotted list in source");
+      abort();
+    }
+  }
+  return free_vars;
+}
 
 pic_val_t pic_generate(pic_val_t form, pic_val_t env, pic_val_t code) {
   if (pic_symbolp(form)) {
@@ -67,6 +259,7 @@ pic_val_t pic_generate(pic_val_t form, pic_val_t env, pic_val_t code) {
               code = pic_generate(pic_car(exprs), env, code);
               exprs = pic_cdr(exprs);
             }
+            // FIXME: pop return values
             return code;
           }
           case pic_quote_syntax: {
@@ -74,8 +267,8 @@ pic_val_t pic_generate(pic_val_t form, pic_val_t env, pic_val_t code) {
             return pic_cons(cmd, code);
           }
           case pic_if_syntax: {
-            pic_val_t label1 = pic_gensym("label1");
-            pic_val_t label2 = pic_gensym("label2");
+            pic_val_t label1 = pic_gensym("fail");
+            pic_val_t label2 = pic_gensym("succ");
             code = pic_generate(pic_cadr(form), env, code);
             code = pic_cons(pic_list(OP_JMZ, label1), code);
             code = pic_generate(pic_caddr(form), env, code);
@@ -166,7 +359,8 @@ pic_val_t pic_box_name(pic_val_t box) {
 #define POP() stack = pic_cdr(stack)
 
 
-pic_val_t pic_vm(pic_val_t code, pic_val_t stack) {
+// The VM
+pic_val_t pic_execute(pic_val_t code, pic_val_t stack) {
 
   while (! pic_nilp(code)) {
     pic_val_t cmd = pic_car(code);
@@ -212,7 +406,6 @@ pic_val_t pic_vm(pic_val_t code, pic_val_t stack) {
       }
       case OP_GSET: {
         pic_box_set(ARG1(), PEEK());
-        POP();
         break;
       }
       case OP_JMP: {
@@ -241,7 +434,9 @@ pic_val_t pic_vm(pic_val_t code, pic_val_t stack) {
 
 pic_val_t pic_eval(pic_val_t form, pic_val_t env) {
   puts("compiling...");
-  pic_val_t code = pic_compile(form, env);
+  //  pic_val_t code = pic_compile(form, env);
   puts("compiled");
-  return pic_vm(code, pic_nil);
+  //  return pic_execute(code, pic_nil);
+  pic_analyze(form, pic_minimal_environment());
+  return form;
 }
