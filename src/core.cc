@@ -85,13 +85,12 @@ pic_val_t pic_make_port(FILE *file, bool dir, bool text)
   return pic_val(obj);
 }
 
-pic_val_t pic_make_closure(pic_val_t args, pic_val_t body, pic_val_t env)
+pic_val_t pic_make_closure(pic_val_t code, pic_val_t closed)
 {
   pic_closure_t *obj = new pic_closure_t;
   obj->type = PIC_CLOSURE_T;
-  obj->args = args;
-  obj->body = body;
-  obj->env = env;
+  obj->code = code;
+  obj->closed = closed;
   return pic_val(obj);
 }
 

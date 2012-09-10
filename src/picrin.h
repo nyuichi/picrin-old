@@ -160,9 +160,8 @@ struct pic_port_t : pic_obj_t {
 
 
 struct pic_closure_t : pic_obj_t {
-  pic_val_t env;
-  pic_val_t args;
-  pic_val_t body;
+  pic_val_t code;
+  pic_val_t closed;
 };
 
 
@@ -229,7 +228,7 @@ pic_val_t pic_make_pair(pic_val_t car, pic_val_t cdr);
 pic_val_t pic_make_string(const std::string &str);
 pic_val_t pic_make_symbol(const std::string &name);
 pic_val_t pic_make_port(FILE * file, bool dir, bool text);
-pic_val_t pic_make_closure(pic_val_t args, pic_val_t body, pic_val_t env);
+pic_val_t pic_make_closure(pic_val_t code, pic_val_t closed);
 pic_val_t pic_make_native(pic_val_t (*function)(pic_val_t args));
 
 

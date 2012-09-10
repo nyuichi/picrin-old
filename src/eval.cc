@@ -8,7 +8,6 @@ enum pic_opcode {
   OP_GSET = 0x33,
   OP_JMP = 0x43,
   OP_JMZ = 0x53,
-
   OP_LREF = 0x63,
   OP_CREF = 0x73,
   OP_CLOSURE = 0x83,
@@ -63,7 +62,7 @@ enum pic_opcode {
    (LREF 0)
    (GREF box_+)
    (CALL 2)
-   (RETURN))
+   (RETURN 1))
    
 
 ;; 2. free variable
@@ -107,6 +106,7 @@ enum pic_opcode {
   // TODO
   // internal definition
   // assignment to local/free variable
+  // variable arguments
 ;;
 
 #endif
@@ -389,10 +389,16 @@ pic_val_t pic_assemble(pic_val_t code) {
   while (! pic_nilp(cmds)) {
     pic_val_t cmd = pic_car(cmds);
     if (pic_car(cmd) == OP_JMZ) {
-      pic_pair(pic_cdr(cmd))->car = pic_cdr(pic_assq(pic_cadr(cmd), labels));
+      pic_pair(pic_cdr(cmd))->car
+          = pic_cdr(pic_assq(pic_cadr(cmd), labels));
     }
     else if (pic_car(cmd) == OP_JMP) {
-      pic_pair(pic_cdr(cmd))->car = pic_cdr(pic_assq(pic_cadr(cmd), labels));
+      pic_pair(pic_cdr(cmd))->car
+          = pic_cdr(pic_assq(pic_cadr(cmd), labels));
+    }
+    else if (pic_car(cmd) == OP_CLOSURE) {
+      pic_pair(pic_cddr(cmd))->car
+          = pic_cdr(pic_assq(pic_caddr(cmd), labels));
     }
     cmds = pic_cdr(cmds);
   }
@@ -409,15 +415,19 @@ pic_val_t pic_print_assemply(pic_val_t code) {
 }
 
 pic_val_t pic_compile(pic_val_t form, pic_val_t env) {
+  pic_val_t code;
   pic_analyze(form, pic_minimal_environment());
   puts("**analyzed**");
   pic_print(form);
   puts("**end**");
-  pic_val_t code = pic_generate(form, env);
+  code = pic_generate(form, env);
   puts("**geenrated**");
   pic_print_assemply(code);
   puts("**end**");
-  //  return pic_assemble(code);
+  code = pic_assemble(code);
+  puts("**assembled**");
+  pic_print_assemply(code);
+  puts("**end**");
   return code;
 }
 
@@ -436,16 +446,24 @@ pic_val_t pic_box_name(pic_val_t box) {
 
 
 #define ARG1() pic_cadr(cmd)
+#define ARG2() pic_caddr(cmd)
 #define PUSH(value) stack = pic_cons(value, stack)
 #define PEEK() pic_car(stack)
 #define POP() stack = pic_cdr(stack)
+#define PARAMETERS() pic_caddr(pic_car(frames))
 
 
 // The VM
-pic_val_t pic_execute(pic_val_t code, pic_val_t stack) {
+pic_val_t pic_execute(pic_val_t code) {
+
+  pic_val_t stack = pic_nil;            // stack
+  pic_val_t frames = pic_nil;            // frame is list of pc and numarg
 
   while (! pic_nilp(code)) {
     pic_val_t cmd = pic_car(code);
+
+    perror("executing:");
+    pic_print(cmd);
 
     switch (pic_car(cmd)) {
       case OP_PUSH: {
@@ -453,14 +471,19 @@ pic_val_t pic_execute(pic_val_t code, pic_val_t stack) {
         break;
       }
       case OP_CALL: {
-        pic_val_t proc = PEEK(); POP();
+        pic_val_t proc = PEEK();
 
         if (pic_closurep(proc)) {
-          // TODO
-          perror("FIXME: cannot call closures for now");
-          abort();
+          // What is necessary
+          // current_pc
+          // num_args
+          // local_vars (with proc)
+          frames = pic_cons(pic_list(code, ARG1(), stack), frames);
+          code = pic_closure(proc)->code;
+          continue;
         }
         else if (pic_nativep(proc)) {
+          POP();
           pic_val_t args = pic_nil;
           for (int i = 0, len = pic_int(ARG1()); i < len; ++i) {
             args = pic_cons(PEEK(), args);
@@ -502,19 +525,52 @@ pic_val_t pic_execute(pic_val_t code, pic_val_t stack) {
         break;
       }
       case OP_LREF: {
-        // TODO
+        int n = pic_int(ARG1());
+        pic_val_t lvars = pic_cdr(PARAMETERS());
+        for (int i = 0; i != n; ++i) {
+          lvars = pic_cdr(lvars);
+        }
+        PUSH(pic_car(lvars));
+        break;
       }
       case OP_CREF: {
-        // TODO
+        int n = pic_int(ARG1());
+        pic_val_t closed = pic_closure(pic_car(PARAMETERS()))->closed;
+        for (int i = 0; i != n; ++i) {
+          closed = pic_cdr(closed);
+        }
+        PUSH(pic_car(closed));
+        break;
       }
       case OP_CLOSURE: {
-        // TODO
+        pic_val_t closed = pic_nil;
+        for (int i = 0, len = pic_int(ARG1()); i < len; ++i) {
+          closed = pic_cons(PEEK(), closed);
+          POP();
+        }
+        perror("closed");
+        pic_print(closed);
+        pic_val_t closure = pic_make_closure(ARG2(), closed);
+        PUSH(closure);
+        break;
       }
       case OP_RETURN: {
-        // TODO
+        pic_val_t return_value = PEEK(); POP();
+        pic_val_t frame = pic_car(frames); frames = pic_cdr(frames);
+        code = pic_car(frame);
+        for (int i = -1, len = pic_int(pic_cadr(frame)); i < len; ++i) {
+          POP();
+        }
+        PUSH(return_value);
+        break;
       }
       case OP_EXIT: {
-        return pic_car(stack);
+        if (pic_nilp(stack)) {
+          return pic_void;
+        }
+        else { 
+          return pic_car(stack);
+        }
       }
       case OP_POP: {
         POP();
@@ -530,6 +586,5 @@ pic_val_t pic_eval(pic_val_t form, pic_val_t env) {
   puts("compiling...");
   pic_val_t code = pic_compile(form, env);
   puts("compiled");
-  //  return pic_execute(code, pic_nil);
-  return pic_nil;
+  return pic_execute(code);
 }
