@@ -322,6 +322,7 @@ bool pic_listp(pic_val_t val);
 pic_val_t pic_reverse(pic_val_t list);
 pic_val_t pic_append(pic_val_t list1, pic_val_t list2);
 pic_val_t pic_delete_eq(pic_val_t x, pic_val_t list);
+int pic_locate_eq(pic_val_t x, pic_val_t list);
 
 pic_val_t pic_memq(pic_val_t key, pic_val_t list);
 pic_val_t pic_assq(pic_val_t key, pic_val_t alist);

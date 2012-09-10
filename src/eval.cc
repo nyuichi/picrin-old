@@ -8,6 +8,13 @@ enum pic_opcode {
   OP_GSET = 0x33,
   OP_JMP = 0x43,
   OP_JMZ = 0x53,
+
+  OP_LREF = 0x63,
+  OP_CREF = 0x73,
+  OP_CLOSURE = 0x83,
+  OP_RETURN = 0x93,
+  OP_EXIT = 0xa3,
+  OP_POP = 0xb3,
 };
 
 #if 0
@@ -43,20 +50,20 @@ enum pic_opcode {
    (f 1))
 
   ; generated
-  ((JUMP MAIN)
-   CLOSURE0
-   (LREF 0)
-   (LREF 0)
-   (GREF box_+)
-   (CALL 2)
-   (RETURN)
-   MAIN
+  (MAIN
    (CLOSURE 0 CLOSURE0)
    (GSET box_f)
    (POP)
    (PUSH 1)
    (GREF box_f)
-   (CALL 1))
+   (CALL 1)
+   (EXIT)
+   CLOSURE0
+   (LREF 0)
+   (LREF 0)
+   (GREF box_+)
+   (CALL 2)
+   (RETURN))
    
 
 ;; 2. free variable
@@ -72,18 +79,7 @@ enum pic_opcode {
    (g 2))
    
   ; generated
-  ((JUMP MAIN)
-   CLOSURE0
-   (LREF 0)
-   (CLOSURE 1 CLOSURE1)
-   (RETURN)
-   CLOSURE1
-   (LREF 0)
-   (CREF 0)
-   (GREF box_+)
-   (CALL 2)
-   (RETURN)
-   MAIN
+  (MAIN
    (CLOSURE 0 CLOSURE0)
    (GSET box_f)
    (POP)
@@ -94,8 +90,23 @@ enum pic_opcode {
    (POP)
    (PUSH 1)
    (GREF box_g)
-   (CALL 1))
+   (CALL 1)
+   (EXIT)
+   CLOSURE0
+   (LREF 0)
+   (CLOSURE 1 CLOSURE1)
+   (RETURN)
+   CLOSURE1
+   (LREF 0)
+   (CREF 0)
+   (GREF box_+)
+   (CALL 2)
+   (RETURN))
 
+
+  // TODO
+  // internal definition
+  // assignment to local/free variable
 ;;
 
 #endif
@@ -226,82 +237,136 @@ pic_val_t pic_analyze(pic_val_t form, pic_val_t env) {
   return free_vars;
 }
 
-pic_val_t pic_generate(pic_val_t form, pic_val_t env, pic_val_t code) {
+static pic_val_t closures;
+static pic_val_t genv;
+static pic_val_t lvars;
+static pic_val_t fvars;
+
+pic_val_t pic_generate_expr(pic_val_t form, pic_val_t code) {
   if (pic_symbolp(form)) {
-    pic_val_t cmd = pic_list(OP_GREF, pic_env_get(form, env));
-    return pic_cons(cmd, code);
+    pic_val_t cmd;
+    int index;
+    if ((index = pic_locate_eq(form, lvars)) != -1) {
+      cmd = pic_list(OP_LREF, pic_fixnum(index));
+    }
+    else if ((index = pic_locate_eq(form, fvars)) != -1) {
+      cmd = pic_list(OP_CREF, pic_fixnum(index));
+    }
+    else {
+      cmd = pic_list(OP_GREF, pic_env_get(form, genv));
+    }
+    code = pic_cons(cmd, code);
+    return code;
   }
   else if (! pic_pairp(form)) {
     pic_val_t cmd = pic_list(OP_PUSH, form);
-    return pic_cons(cmd, code);
+    code = pic_cons(cmd, code);
+    return code;
   }
-  else if (pic_listp(form)) {
-    pic_val_t proc = pic_car(form);
-    
-    if (pic_symbolp(proc)) {
-      pic_val_t res = pic_env_get(proc, env);
-
-      if (pic_pairp(res) && pic_syntaxp(pic_cdr(res))) {
-        switch (pic_cdr(res)) {
-          case pic_define_syntax: {
-            pic_env_add(pic_cadr(form), pic_undef, env);
-            // *fallthrough*
-          }
-          case pic_set_syntax: {
-            code = pic_generate(pic_caddr(form), env, code);
-            pic_val_t var = pic_env_get(pic_cadr(form), env);
-            pic_val_t cmd = pic_list(OP_GSET, var);
-            return pic_cons(cmd, code);
-          }
-          case pic_begin_syntax: {
-            pic_val_t exprs = pic_cdr(form);
-            while (! pic_nilp(exprs)) {
-              code = pic_generate(pic_car(exprs), env, code);
-              exprs = pic_cdr(exprs);
-            }
-            // FIXME: pop return values
-            return code;
-          }
-          case pic_quote_syntax: {
-            pic_val_t cmd = pic_list(OP_PUSH, pic_cadr(form));
-            return pic_cons(cmd, code);
-          }
-          case pic_if_syntax: {
-            pic_val_t label1 = pic_gensym("fail");
-            pic_val_t label2 = pic_gensym("succ");
-            code = pic_generate(pic_cadr(form), env, code);
-            code = pic_cons(pic_list(OP_JMZ, label1), code);
-            code = pic_generate(pic_caddr(form), env, code);
-            code = pic_cons(pic_list(OP_JMP, label2), code);
-            code = pic_cons(label1, code);
-            code = pic_generate(pic_cadddr(form), env, code);
-            code = pic_cons(label2, code);
-            return code;
-          }
-          default: {
-            perror("unsupported operation");
-            abort();
-          }
-        }
+  else { // if (pic_listp(form))
+    switch (pic_car(form)) {
+      case pic_define_syntax: {       // TODO: internal def
+        pic_env_add(pic_cadr(form), pic_undef, genv);
+        // *fallthrough*
       }
-    }
+      case pic_set_syntax: {          // TODO: set! to local/free var
+        code = pic_generate_expr(pic_caddr(form), code);
+        pic_val_t var = pic_env_get(pic_cadr(form), genv);
+        pic_val_t cmd = pic_list(OP_GSET, var);
+        code = pic_cons(cmd, code);
+        return code;
+      }
+      case pic_begin_syntax: {
+        pic_val_t exprs = pic_cdr(form);
+        while (! pic_nilp(exprs)) {
+          code = pic_generate_expr(pic_car(exprs), code);
+          code = pic_cons(pic_list(OP_POP), code);
+          exprs = pic_cdr(exprs);
+        }
+        code = pic_cdr(code); // remve the last pop
+        return code;
+      }
+      case pic_quote_syntax: {
+        pic_val_t cmd = pic_list(OP_PUSH, pic_cadr(form));
+        code = pic_cons(cmd, code);
+      }
+      case pic_if_syntax: {
+        pic_val_t label1 = pic_gensym("fail");
+        pic_val_t label2 = pic_gensym("succ");
+        code = pic_generate_expr(pic_cadr(form), code);
+        code = pic_cons(pic_list(OP_JMZ, label1), code);
+        code = pic_generate_expr(pic_caddr(form), code);
+        code = pic_cons(pic_list(OP_JMP, label2), code);
+        code = pic_cons(label1, code);
+        code = pic_generate_expr(pic_cadddr(form), code);
+        code = pic_cons(label2, code);
+        return code;
+      }
+      case pic_lambda_syntax: {
+        // create new label
+        pic_val_t label = pic_gensym("closure");
 
-    int n = -1;
-    form = pic_reverse(form);
+        // delays code generation of the closure
+        closures = pic_acons(label, form, closures);
 
-    while (! pic_nilp(form)) {
-      code = pic_generate(pic_car(form), env, code);
-      form = pic_cdr(form);
-      ++n;
-    }
+        // push variables to be closed
+        pic_val_t freevars = pic_reverse(pic_caddr(form));
+        int num_fvs = 0;
+        while (! pic_nilp(freevars)) {
+          code = pic_generate_expr(pic_car(freevars), code);
+          freevars = pic_cdr(freevars);
+          ++num_fvs;
+        }
+
+        // make the closure
+        pic_val_t cmd = pic_list(OP_CLOSURE, pic_fixnum(num_fvs), label);
+        code = pic_cons(cmd, code);
+        return code;
+      }
+      default: {
+        int n = -1;
+        form = pic_reverse(form);
+
+        while (! pic_nilp(form)) {
+          code = pic_generate_expr(pic_car(form), code);
+          form = pic_cdr(form);
+          ++n;
+        }
     
-    pic_val_t cmd = pic_list(OP_CALL, pic_fixnum(n));
-    return pic_cons(cmd, code);
+        pic_val_t cmd = pic_list(OP_CALL, pic_fixnum(n));
+        return pic_cons(cmd, code);
+      }
+    } // switch
+  } // else
+}
+
+pic_val_t pic_generate(pic_val_t form, pic_val_t env) {
+  genv = env;
+  closures = pic_nil;
+  
+  pic_val_t code = pic_nil;
+  
+  // generate main
+  pic_val_t main = pic_gensym("main");
+  lvars = fvars = pic_nil;
+  code = pic_cons(main, code);
+  code = pic_generate_expr(form, code);
+  code = pic_cons(pic_list(OP_EXIT), code); // TODO Can't we replace EXIT with RETURN?
+
+  // generate closures
+  while (! pic_nilp(closures)) {
+    pic_val_t x = pic_car(closures); closures = pic_cdr(closures);
+
+    pic_val_t label = pic_car(x), closure = pic_cdr(x);
+    lvars = pic_cadr(closure);
+    fvars = pic_caddr(closure);
+
+    code = pic_cons(label, code);
+    code = pic_generate_expr(pic_cadddr(closure), code);
+    code = pic_cons(pic_list(OP_RETURN), code);
   }
-  else {
-    perror("dotted list in source");
-    abort();
-  }
+
+  return code;
 }
 
 pic_val_t pic_assemble(pic_val_t code) {
@@ -335,8 +400,25 @@ pic_val_t pic_assemble(pic_val_t code) {
   return code;
 }
 
+pic_val_t pic_print_assemply(pic_val_t code) {
+  code = pic_reverse(code);
+  while (! pic_nilp(code)) {
+    pic_print(pic_car(code));
+    code = pic_cdr(code);
+  }
+}
+
 pic_val_t pic_compile(pic_val_t form, pic_val_t env) {
-  return pic_assemble(pic_generate(form, env, pic_nil));
+  pic_analyze(form, pic_minimal_environment());
+  puts("**analyzed**");
+  pic_print(form);
+  puts("**end**");
+  pic_val_t code = pic_generate(form, env);
+  puts("**geenrated**");
+  pic_print_assemply(code);
+  puts("**end**");
+  //  return pic_assemble(code);
+  return code;
 }
 
 
@@ -419,24 +501,35 @@ pic_val_t pic_execute(pic_val_t code, pic_val_t stack) {
         }
         break;
       }
+      case OP_LREF: {
+        // TODO
+      }
+      case OP_CREF: {
+        // TODO
+      }
+      case OP_CLOSURE: {
+        // TODO
+      }
+      case OP_RETURN: {
+        // TODO
+      }
+      case OP_EXIT: {
+        return pic_car(stack);
+      }
+      case OP_POP: {
+        POP();
+        break;
+      }
     }
 
     code = pic_cdr(code);
-  }
-
-  if (pic_nilp(stack)) {
-    return pic_void;
-  }
-  else {
-    return pic_car(stack);
   }
 }
 
 pic_val_t pic_eval(pic_val_t form, pic_val_t env) {
   puts("compiling...");
-  //  pic_val_t code = pic_compile(form, env);
+  pic_val_t code = pic_compile(form, env);
   puts("compiled");
   //  return pic_execute(code, pic_nil);
-  pic_analyze(form, pic_minimal_environment());
-  return form;
+  return pic_nil;
 }

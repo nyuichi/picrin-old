@@ -97,3 +97,21 @@ pic_val_t pic_delete_eq(pic_val_t x, pic_val_t list) {
     }
   }
 }
+
+static int pic_locate_eq_(pic_val_t x, pic_val_t list, int n) {
+  if (pic_nilp(list)) {
+    return -1;
+  }
+  else {
+    if (pic_eqp(x, pic_car(list))) {
+      return n;
+    }
+    else {
+      return pic_locate_eq_(x, pic_cdr(list), n + 1);
+    }
+  }
+}
+
+int pic_locate_eq(pic_val_t x, pic_val_t list) {
+  return pic_locate_eq_(x, list, 0);
+}

@@ -263,6 +263,12 @@ void pic_write(pic_val_t obj, pic_val_t port)
       ccase(0x33, "GSET");
       ccase(0x43, "JMP");
       ccase(0x53, "JMZ");
+      ccase(0x63, "LREF");
+      ccase(0x73, "CREF");
+      ccase(0x83, "CLOSURE");
+      ccase(0x93, "RETURN");
+      ccase(0xa3, "EXIT");
+      ccase(0xb3, "POP");
       ccase(pic_lambda_syntax, "lambda*");
       ccase(pic_define_syntax, "define*");
       ccase(pic_set_syntax, "set!*");
