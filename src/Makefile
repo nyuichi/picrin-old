@@ -1,7 +1,7 @@
-CXXFLAGS += -g -Wall -Wextra -MMD -MP
+CXXFLAGS += -g -Wall -Wextra -MMD -MP -I../include
 CC=g++
 
-TARG = picrin.o bool.o core.o list.o port.o eval.o env.o lib.o
+TARG = picrin.o bool.o core.o list.o port.o eval.o env.o
 
 all: picrin run
 
@@ -12,6 +12,10 @@ run:
 
 clean:
 	rm -f picrin *.o *.d
+
+PHONY: check-syntax
+check-syntax:
+	$(CC) -Wall -Wextra -fsyntax-only $(CXXFLAGS) $(CHK_SOURCES)
 
 -include $(TARG:%.o=%.d)
 

@@ -2,18 +2,18 @@
 
 
 enum pic_opcode {
-  OP_PUSH = 0x03,
-  OP_CALL = 0x13,
-  OP_GREF = 0x23,
-  OP_GSET = 0x33,
-  OP_JMP = 0x43,
-  OP_JMZ = 0x53,
-  OP_LREF = 0x63,
-  OP_CREF = 0x73,
-  OP_CLOSURE = 0x83,
-  OP_RETURN = 0x93,
-  OP_EXIT = 0xa3,
-  OP_POP = 0xb3,
+  OP_PUSH = 0x03,                       // datum
+  OP_CALL = 0x13,                       // argc
+  OP_GREF = 0x23,                       // boxref
+  OP_GSET = 0x33,                       // boxref
+  OP_JMP = 0x43,                        // code
+  OP_JMZ = 0x53,                        // code
+  OP_LREF = 0x63,                       // index
+  OP_CREF = 0x73,                       // index
+  OP_CLOSURE = 0x83,                    // fvsc, code
+  OP_RETURN = 0x93,                     // (none)
+  OP_EXIT = 0xa3,                       // (none)
+  OP_POP = 0xb3,                        // (none)
 };
 
 #if 0
@@ -406,7 +406,7 @@ pic_val_t pic_assemble(pic_val_t code) {
   return code;
 }
 
-pic_val_t pic_print_assemply(pic_val_t code) {
+void pic_print_assemply(pic_val_t code) {
   code = pic_reverse(code);
   while (! pic_nilp(code)) {
     pic_print(pic_car(code));
@@ -415,20 +415,22 @@ pic_val_t pic_print_assemply(pic_val_t code) {
 }
 
 pic_val_t pic_compile(pic_val_t form, pic_val_t env) {
-  pic_val_t code;
-  pic_analyze(form, pic_minimal_environment());
-  puts("**analyzed**");
-  pic_print(form);
-  puts("**end**");
-  code = pic_generate(form, env);
-  puts("**geenrated**");
-  pic_print_assemply(code);
-  puts("**end**");
-  code = pic_assemble(code);
-  puts("**assembled**");
-  pic_print_assemply(code);
-  puts("**end**");
-  return code;
+  static pic_val_t mini_env = pic_minimal_environment();
+  // pic_val_t code;
+  // pic_analyze(form, pic_minimal_environment());
+  // puts("**analyzed**");
+  // pic_print(form);
+  // puts("**end**");
+  // code = pic_generate(form, env);
+  // puts("**geenrated**");
+  // pic_print_assemply(code);
+  // puts("**end**");
+  // code = pic_assemble(code);
+  // puts("**assembled**");
+  // pic_print_assemply(code);
+  // puts("**end**");
+  pic_analyze(form, mini_env);
+  return pic_assemble(pic_generate(form, env));
 }
 
 
@@ -462,8 +464,8 @@ pic_val_t pic_execute(pic_val_t code) {
   while (! pic_nilp(code)) {
     pic_val_t cmd = pic_car(code);
 
-    perror("executing:");
-    pic_print(cmd);
+    // perror("executing:");
+    // pic_print(cmd);
 
     switch (pic_car(cmd)) {
       case OP_PUSH: {
@@ -548,8 +550,8 @@ pic_val_t pic_execute(pic_val_t code) {
           closed = pic_cons(PEEK(), closed);
           POP();
         }
-        perror("closed");
-        pic_print(closed);
+        // perror("closed");
+        // pic_print(closed);
         pic_val_t closure = pic_make_closure(ARG2(), closed);
         PUSH(closure);
         break;
@@ -583,8 +585,8 @@ pic_val_t pic_execute(pic_val_t code) {
 }
 
 pic_val_t pic_eval(pic_val_t form, pic_val_t env) {
-  puts("compiling...");
+  // puts("compiling...");
   pic_val_t code = pic_compile(form, env);
-  puts("compiled");
+  // puts("compiled");
   return pic_execute(code);
 }
